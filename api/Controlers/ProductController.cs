@@ -13,6 +13,7 @@ namespace api.Controlers
     public class ProductController : ControllerBase
     {
         private readonly Data.AppDbContext _context;
+    
         public ProductController(Data.AppDbContext context)
         {
             _context = context;

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Identity;
 
 namespace api.Models
 {
@@ -12,6 +13,6 @@ namespace api.Models
         public string Description { get; set; } = string.Empty;
         public DateTime CreationDate { get; set; }
         public bool IsDeleted { get; set; }
-        public int CreatorUserId { get; set; }
+        public string? CreatorUserId { get; set; }
     }
 }

@@ -1,9 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using api.Models;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 
 namespace api.Data
 {
-    public class AppDbContext : DbContext
+    public class AppDbContext : IdentityDbContext<IdentityUser>
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
@@ -12,8 +14,6 @@ namespace api.Data
         public DbSet<Category> Categories { get; set; }
         public DbSet<Comment> Comments { get; set; }
         public DbSet<Product> Products { get; set; }
-        public DbSet<User> Users { get; set; }
-        public DbSet<Role> Roles { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -25,38 +25,26 @@ namespace api.Data
                 .WithMany(c => c.Products)
                 .UsingEntity(j => j.ToTable("ProductCategories"));
                 
-            // Many-to-One: Product -> User (creator)
+            // Many-to-One: Product -> IdentityUser (creator)
             modelBuilder.Entity<Product>()
-                .HasOne<User>()
+                .HasOne<IdentityUser>()
                 .WithMany()
                 .HasForeignKey(p => p.CreationUserId)
                 .OnDelete(DeleteBehavior.NoAction);
-
+                
             // Many-to-One: Comment -> Product
             modelBuilder.Entity<Comment>()
                 .HasOne<Product>()
                 .WithMany()
                 .HasForeignKey(c => c.ProductId)
                 .OnDelete(DeleteBehavior.NoAction);
-
-            // Many-to-One: Comment -> User (creator)
+                
+            // Many-to-One: Comment -> IdentityUser (creator)
             modelBuilder.Entity<Comment>()
-                .HasOne<User>()
+                .HasOne<IdentityUser>()
                 .WithMany()
                 .HasForeignKey(c => c.CreatorUserId)
                 .OnDelete(DeleteBehavior.NoAction);
-
-            modelBuilder.Entity<User>()
-                .HasOne<Role>()
-                .WithMany()
-                .HasForeignKey(u => u.RoleId)
-                .OnDelete(DeleteBehavior.NoAction);
-
-            modelBuilder.Entity<Role>()
-                .HasData(
-                    new Role { Id = 1, Name = "User" },
-                    new Role { Id = 2, Name = "Admin" }
-                );
         }
     }
 }
