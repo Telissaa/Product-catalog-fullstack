@@ -252,7 +252,7 @@ namespace api.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Categories");
+                    b.ToTable("Categories", (string)null);
                 });
 
             modelBuilder.Entity("api.Models.Comment", b =>
@@ -285,7 +285,7 @@ namespace api.Migrations
 
                     b.HasIndex("ProductId");
 
-                    b.ToTable("Comments");
+                    b.ToTable("Comments", (string)null);
                 });
 
             modelBuilder.Entity("api.Models.Product", b =>
@@ -320,7 +320,7 @@ namespace api.Migrations
 
                     b.HasIndex("CreationUserId");
 
-                    b.ToTable("Products");
+                    b.ToTable("Products", (string)null);
                 });
 
             modelBuilder.Entity("CategoryProduct", b =>
