@@ -14,5 +14,9 @@ namespace api.Models
         public DateTime CreationDate { get; set; }
         public bool IsDeleted { get; set; }
         public string? CreatorUserId { get; set; }
+
+        // Navigation properties
+        public virtual Product? Product { get; set; }
+        public virtual IdentityUser? Creator { get; set; }
     }
 }

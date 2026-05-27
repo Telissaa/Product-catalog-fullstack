@@ -27,21 +27,21 @@ namespace api.Data
                 
             // Many-to-One: Product -> IdentityUser (creator)
             modelBuilder.Entity<Product>()
-                .HasOne<IdentityUser>()
+                .HasOne(p => p.Creator)
                 .WithMany()
                 .HasForeignKey(p => p.CreationUserId)
                 .OnDelete(DeleteBehavior.NoAction);
                 
             // Many-to-One: Comment -> Product
             modelBuilder.Entity<Comment>()
-                .HasOne<Product>()
+                .HasOne(c => c.Product)
                 .WithMany()
                 .HasForeignKey(c => c.ProductId)
                 .OnDelete(DeleteBehavior.NoAction);
                 
             // Many-to-One: Comment -> IdentityUser (creator)
             modelBuilder.Entity<Comment>()
-                .HasOne<IdentityUser>()
+                .HasOne(c => c.Creator)
                 .WithMany()
                 .HasForeignKey(c => c.CreatorUserId)
                 .OnDelete(DeleteBehavior.NoAction);

@@ -18,5 +18,6 @@ namespace api.Models
 
         // Navigation properties
         public ICollection<Category> Categories { get; set; } = new List<Category>();
+        public virtual IdentityUser? Creator { get; set; }
     }
 }

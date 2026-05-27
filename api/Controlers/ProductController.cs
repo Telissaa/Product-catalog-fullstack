@@ -21,7 +21,7 @@ namespace api.Controlers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Product>>> GetProducts()
         {
-            // Pobiera produkty wraz z ich kategoriami z bazy danych
+            // Downloads products and their categories from the database
             return await _context.Products.Include(p => p.Categories).ToListAsync();
         }
     }
