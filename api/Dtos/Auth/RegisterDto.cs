@@ -1,8 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace api.Models
+namespace api.Dtos.Auth
 {
-    public class RegisterModel
+    public class RegisterDto
     {
         [Required(ErrorMessage = "Username is required")]
         [StringLength(100, MinimumLength = 3, ErrorMessage = "Username must be between 3 and 100 characters")]

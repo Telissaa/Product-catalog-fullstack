@@ -1,8 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace api.Models
+namespace api.Dtos.Auth
 {
-    public class LoginModel
+    public class LoginDto
     {
         [Required(ErrorMessage = "Email is required")]
         [EmailAddress(ErrorMessage = "Invalid email address")]

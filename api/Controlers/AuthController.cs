@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
-using api.Models;
+using api.Dtos.Auth;
 
 namespace api.Controllers
 {
@@ -27,7 +27,7 @@ namespace api.Controllers
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterModel model)
+        public async Task<IActionResult> Register([FromBody] RegisterDto model)
         {
             // Validate model state (should be automatic with [Required] attributes, but explicit check is safer)
             if (!ModelState.IsValid)
@@ -63,7 +63,7 @@ namespace api.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginModel model)
+        public async Task<IActionResult> Login([FromBody] LoginDto model)
         {
             // Validate model state
             if (!ModelState.IsValid)
