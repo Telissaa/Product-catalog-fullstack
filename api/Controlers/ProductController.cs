@@ -64,7 +64,7 @@ namespace api.Controllers
                         Description = c.Description,
                         CreationDate = c.CreationDate,
                         CreatorUserId = c.CreatorUserId ?? string.Empty,
-                        CreatorUsername = c.Creator?.UserName ?? "Deleted User"
+                        CreatorUserName = c.Creator?.UserName ?? "Deleted User"
             })]
             })];
 
@@ -108,7 +108,7 @@ namespace api.Controllers
                         Description = c.Description,
                         CreationDate = c.CreationDate,
                         CreatorUserId = c.CreatorUserId ?? string.Empty,
-                        CreatorUsername = c.Creator?.UserName ?? "Deleted User"
+                        CreatorUserName = c.Creator?.UserName ?? "Deleted User"
                     })]
             };
 

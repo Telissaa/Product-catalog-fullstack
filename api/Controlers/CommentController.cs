@@ -49,7 +49,7 @@ namespace api.Controlers
                 Description = c.Description,
                 CreationDate = c.CreationDate,
                 CreatorUserId = c.CreatorUserId,
-                CreatorUsername = c.Creator != null ? c.Creator.UserName ?? "Deleted User" : "Deleted User"
+                CreatorUserName = c.Creator != null ? c.Creator.UserName ?? "Deleted User" : "Deleted User"
             }).ToList();
 
             return Ok(new

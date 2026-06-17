@@ -12,6 +12,6 @@ namespace api.Dtos.Comment
         public string Description { get; set; } = string.Empty;
         public DateTime CreationDate { get; set; }
         public string? CreatorUserId { get; set; }
-        public string CreatorUsername { get; set; } = string.Empty;
+        public string CreatorUserName { get; set; } = string.Empty;
     }
 }
