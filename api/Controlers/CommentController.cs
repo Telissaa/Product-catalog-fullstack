@@ -22,6 +22,48 @@ namespace api.Controlers
             _context = context;
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetComments([FromQuery] int productId, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        {
+            if (pageNumber < 1) pageNumber = 1;
+            if (pageSize < 1) pageSize = 10;
+            if (pageSize > 100) pageSize = 15; // Max 15 items per page
+
+            var query = _context.Comments
+                .Include(c => c.Creator)
+                .Where(c => c.ProductId == productId);
+
+            var totalCount = await query.CountAsync();
+            var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+
+            var comments = await query
+                .OrderByDescending(c => c.CreationDate)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize) 
+                .ToListAsync();
+
+            var commentDtos = comments.Select(c => new CommentDto
+            {
+                Id = c.Id,
+                ProductId = c.ProductId,
+                Description = c.Description,
+                CreationDate = c.CreationDate,
+                CreatorUserId = c.CreatorUserId,
+                CreatorUsername = c.Creator != null ? c.Creator.UserName ?? "Deleted User" : "Deleted User"
+            }).ToList();
+
+            return Ok(new
+            {
+                message = "Comments retrieved successfully.",
+                totalCount,
+                totalPages,
+                currentPage = pageNumber,
+                comments = commentDtos
+            });
+        }
+
+
+
         [HttpPost]
         [Authorize]
         public async Task<IActionResult> CreateComment([FromBody] CreateCommentDto createCommentDto)
@@ -55,6 +97,22 @@ namespace api.Controlers
             await _context.SaveChangesAsync();
 
             return Ok(new { message = "Comment created successfully." });
+        }
+
+        [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> DeleteComment(int id)
+        {
+            var comment = await _context.Comments.FindAsync(id);
+            if (comment == null)
+            {
+                return NotFound(new { message = "Comment not found." });
+            }
+
+            _context.Comments.Remove(comment);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
         }
     }
 }

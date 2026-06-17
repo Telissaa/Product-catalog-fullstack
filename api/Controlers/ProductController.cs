@@ -18,11 +18,32 @@ namespace api.Controllers
             _context = context;
         }
         [HttpGet] //Download all products
-        public async Task<ActionResult<IEnumerable<Product>>> GetProducts()
+        public async Task<ActionResult> GetProducts([FromQuery] string? search, [FromQuery] string? category, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
-            var products = await _context.Products
-                .Where(p => !p.IsDeleted)
+            if (pageNumber < 1) pageNumber = 1;
+            if (pageSize < 1) pageSize = 10;
+            if (pageSize > 100) pageSize = 15; // Max 15 items per page
+
+            var query = _context.Products
                 .Include(p => p.Categories)
+                .Where(p => !p.IsDeleted); // Filtrujemy tylko nieusunięte produkty
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                query = query.Where(p => p.Title.ToLower().Contains(search.ToLower()));
+            }
+
+            if (!string.IsNullOrWhiteSpace(category))
+            {
+                query = query.Where(p => p.Categories.Any(c => c.Name.ToLower() == category.ToLower()));
+            }
+
+            var totalCount = await query.CountAsync();
+            var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+
+            var products = await query
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
 
             var productDtos = products.Select(p => new ProductDto
@@ -34,9 +55,18 @@ namespace api.Controllers
                 CreationUserId = p.CreationUserId ?? string.Empty,
                 ImageUrl = p.ImageUrl,
                 Categories = p.Categories.Select(c => c.Name).ToList()
-            });
+            }).ToList();
 
-            return Ok(productDtos);
+            var response = new
+            {
+                pageNumber,
+                pageSize,
+                totalCount,
+                totalPages,
+                data = productDtos
+            };
+
+            return Ok(response);
         }
 
         [HttpGet("{id}")]
@@ -60,7 +90,7 @@ namespace api.Controllers
                 CreationDate = product.CreationDate,
                 CreationUserId = product.CreationUserId ?? string.Empty,
                 ImageUrl = product.ImageUrl,
-                Categories = [.. product.Categories.Select(c => c.Name)]
+                Categories = product.Categories.Select(c => c.Name).ToList()
             };
 
             return Ok(productDto);
