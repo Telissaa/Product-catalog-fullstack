@@ -12,7 +12,6 @@ namespace api.Models
         public int ProductId { get; set; }
         public string Description { get; set; } = string.Empty;
         public DateTime CreationDate { get; set; }
-        public bool IsDeleted { get; set; }
         public string? CreatorUserId { get; set; }
 
         // Navigation properties
