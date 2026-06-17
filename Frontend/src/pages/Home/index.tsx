@@ -6,15 +6,27 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Paper from "@mui/material/Paper";
 import { useEffect, useState } from "react";
-import { ProductType } from "../../types/types";
+import { ProductType } from "../../types/products";
+import { getProductsData } from "../../store/products";
+import { Link } from "react-router-dom";
 
-export default function Products() {
+export default function Home() {
   const [rows, setRows] = useState<ProductType[]>([]);
+  const [pageNumber, setPageNumber] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(10);
+  const [totalCount, setTotalCount] = useState<number>(0);
+  const [totalPages, setTotalPages] = useState<number>(0);
 
   const getProducts = async () => {
-    const response = await fetch("http://localhost:5249/api/products");
-    const data = await response.json();
-    setRows(data);
+    const data = await getProductsData();
+    if (!data) return;
+
+    const { products, pageNumber, pageSize, totalCount, totalPages } = data;
+    setRows(products);
+    setPageNumber(pageNumber);
+    setPageSize(pageSize);
+    setTotalCount(totalCount);
+    setTotalPages(totalPages);
   };
 
   useEffect(() => {
@@ -33,7 +45,6 @@ export default function Products() {
               <TableCell align="right">Is Deleted</TableCell>
               <TableCell align="right">Creation Date</TableCell>
               <TableCell align="right">User</TableCell>
-              <TableCell align="right">Image</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -43,14 +54,17 @@ export default function Products() {
                 sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
               >
                 <TableCell align="right">{row.id}</TableCell>
-                <TableCell align="right">{row.title}</TableCell>
+                <TableCell align="right">
+                  <Link to={`/products/${row.id}`}>{row.title}</Link>
+                </TableCell>
                 <TableCell align="right">{row.description}</TableCell>
                 <TableCell align="right">
                   {row.isDeleted ? "Yes" : "No"}
                 </TableCell>
-                <TableCell align="right">{row.creationDate}</TableCell>
-                <TableCell align="right">{row.creationUserId}</TableCell>
-                <TableCell align="right">{row.imageUrl}</TableCell>
+                <TableCell align="right">
+                  {new Date(row.creationDate).toLocaleDateString("pl-PL")}
+                </TableCell>
+                <TableCell align="right">{row.creatorUserName}</TableCell>
               </TableRow>
             ))}
           </TableBody>

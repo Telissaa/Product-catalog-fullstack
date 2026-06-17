@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using api.Data;
 
@@ -11,9 +12,11 @@ using api.Data;
 namespace api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260617161553_AddCommentsNavigationToProduct")]
+    partial class AddCommentsNavigationToProduct
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -276,6 +279,8 @@ namespace api.Migrations
                     b.Property<int>("ProductId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("ProductId1")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -283,6 +288,7 @@ namespace api.Migrations
 
                     b.HasIndex("ProductId");
 
+                    b.HasIndex("ProductId1");
 
                     b.ToTable("Comments");
                 });
@@ -396,11 +402,14 @@ namespace api.Migrations
                         .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("api.Models.Product", "Product")
-                        .WithMany("Comments")
+                        .WithMany()
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
+                    b.HasOne("api.Models.Product", null)
+                        .WithMany("Comments")
+                        .HasForeignKey("ProductId1");
 
                     b.Navigation("Creator");
 

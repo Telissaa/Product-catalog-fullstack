@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using api.Models;
 using api.Dtos.Products;
+using api.Dtos.Comment;
 
 namespace api.Controllers
 {
@@ -18,14 +19,13 @@ namespace api.Controllers
             _context = context;
         }
         [HttpGet] //Download all products
-        public async Task<ActionResult> GetProducts([FromQuery] string? search, [FromQuery] string? category, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        public async Task<ActionResult> GetProducts([FromQuery] string? search, [FromQuery] string? category, [FromQuery] int pageNumber = 1)
         {
-            if (pageNumber < 1) pageNumber = 1;
-            if (pageSize < 1) pageSize = 10;
-            if (pageSize > 100) pageSize = 15; // Max 15 items per page
-
-            var query = _context.Products
+            int pageSize = 15;
+            IQueryable<Product> query = _context.Products
                 .Include(p => p.Categories)
+                .Include(p => p.Comments) // Include comments
+                    .ThenInclude(c => c.Creator)
                 .Where(p => !p.IsDeleted); // Filtrujemy tylko nieusunięte produkty
 
             if (!string.IsNullOrWhiteSpace(search))
@@ -38,24 +38,35 @@ namespace api.Controllers
                 query = query.Where(p => p.Categories.Any(c => c.Name.ToLower() == category.ToLower()));
             }
 
-            var totalCount = await query.CountAsync();
-            var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+            int totalCount = await query.CountAsync();
+            int totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
 
-            var products = await query
+            List<Product> products = await query
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
 
-            var productDtos = products.Select(p => new ProductDto
+            List<ProductDto> productDtos = [.. products.Select(p => new ProductDto
             {
                 Id = p.Id,
                 Title = p.Title,
                 Description = p.Description,
                 CreationDate = p.CreationDate,
                 CreationUserId = p.CreationUserId ?? string.Empty,
+                CreatorUserName = p.Creator?.UserName ?? "Deleted User",
                 ImageUrl = p.ImageUrl,
-                Categories = p.Categories.Select(c => c.Name).ToList()
-            }).ToList();
+                Categories = [.. p.Categories.Select(c => c.Name)],
+                Comments = [.. p.Comments
+                    .Select(c => new CommentDto 
+                    {
+                        Id = c.Id,
+                        ProductId = c.ProductId,
+                        Description = c.Description,
+                        CreationDate = c.CreationDate,
+                        CreatorUserId = c.CreatorUserId ?? string.Empty,
+                        CreatorUsername = c.Creator?.UserName ?? "Deleted User"
+            })]
+            })];
 
             var response = new
             {
@@ -63,7 +74,7 @@ namespace api.Controllers
                 pageSize,
                 totalCount,
                 totalPages,
-                data = productDtos
+                products = productDtos
             };
 
             return Ok(response);
@@ -75,12 +86,9 @@ namespace api.Controllers
             var product = await _context.Products
                 .Where(p => !p.IsDeleted && p.Id == id)
                 .Include(p => p.Categories)
-                .FirstOrDefaultAsync();
-
-            if (product == null)
-            {
-                return NotFound();
-            }
+                .Include(p => p.Comments)
+                    .ThenInclude(c => c.Creator)
+                .FirstOrDefaultAsync() ?? throw new KeyNotFoundException("Nie znaleziono produktu o podanym ID.");
 
             var productDto = new ProductDto
             {
@@ -89,8 +97,19 @@ namespace api.Controllers
                 Description = product.Description,
                 CreationDate = product.CreationDate,
                 CreationUserId = product.CreationUserId ?? string.Empty,
+                CreatorUserName = product.Creator?.UserName ?? "Deleted User",
                 ImageUrl = product.ImageUrl,
-                Categories = product.Categories.Select(c => c.Name).ToList()
+                Categories = [.. product.Categories.Select(c => c.Name)],
+                Comments = [.. product.Comments
+                    .Select(c => new Dtos.Comment.CommentDto
+                    {
+                        Id = c.Id,
+                        ProductId = c.ProductId,
+                        Description = c.Description,
+                        CreationDate = c.CreationDate,
+                        CreatorUserId = c.CreatorUserId ?? string.Empty,
+                        CreatorUsername = c.Creator?.UserName ?? "Deleted User"
+                    })]
             };
 
             return Ok(productDto);
@@ -126,7 +145,8 @@ namespace api.Controllers
                 CreationDate = DateTime.UtcNow,
                 CreationUserId = userId,
                 ImageUrl = productDto.ImageUrl,
-                Categories = categories
+                Categories = categories,
+                Comments = []
             };
 
             _context.Products.Add(product);
@@ -139,8 +159,10 @@ namespace api.Controllers
                 Description = product.Description,
                 CreationDate = product.CreationDate,
                 CreationUserId = product.CreationUserId ?? string.Empty,
+                CreatorUserName = product.Creator?.UserName ?? "Deleted User",
                 ImageUrl = product.ImageUrl,
-                Categories = product.Categories.Select(c => c.Name).ToList()
+                Categories = [.. product.Categories.Select(c => c.Name)],
+
             };
 
             return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, returnDto);
@@ -182,8 +204,10 @@ namespace api.Controllers
                     Description = p.Description,
                     CreationDate = p.CreationDate,
                     CreationUserId = p.CreationUserId ?? string.Empty,
+                    CreatorUserName = p.Creator.UserName ?? "Deleted User",
                     ImageUrl = p.ImageUrl,
-                    Categories = p.Categories.Select(c => c.Name).ToList()
+                    Categories = p.Categories.Select(c => c.Name).ToList(),
+                    Comments = new List<CommentDto>()
 
                 })
                 .ToListAsync();

@@ -12,8 +12,10 @@ namespace api.Dtos.Products
         public required string Description { get; set; }
         public required DateTime CreationDate { get; set; }
         public required string CreationUserId { get; set; }
+        public required string CreatorUserName { get; set; }
         public string? ImageUrl { get; set; }
         public List<string> Categories { get; set; } = new List<string>();
+        public List<Comment.CommentDto> Comments { get; set; } = new List<Comment.CommentDto>();
 
     }
 }

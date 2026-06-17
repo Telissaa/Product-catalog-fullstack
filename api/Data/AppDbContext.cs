@@ -35,7 +35,7 @@ namespace api.Data
             // Many-to-One: Comment -> Product
             modelBuilder.Entity<Comment>()
                 .HasOne(c => c.Product)
-                .WithMany()
+                .WithMany(p => p.Comments)
                 .HasForeignKey(c => c.ProductId)
                 .OnDelete(DeleteBehavior.NoAction);
                 
