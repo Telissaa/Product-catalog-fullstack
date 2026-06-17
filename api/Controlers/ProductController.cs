@@ -115,5 +115,94 @@ namespace api.Controllers
 
             return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, returnDto);
         }
+
+        [HttpDelete("{id}")]
+        [Authorize]
+        public async Task<IActionResult> DeleteProduct(int id)
+        {
+            var product = await _context.Products.FindAsync(id);
+            if (product == null)
+            {
+                return NotFound(new { message = "Nie znaleziono takiego produktu." });
+            }
+
+            if (product.IsDeleted)
+            {
+                return BadRequest(new { message = "Ten produkt został już usunięty." });
+            }
+
+            product.IsDeleted = true;
+            
+
+            await _context.SaveChangesAsync();
+
+            // standard w API po poprawnym usunięciu
+            return NoContent();
+        }
+        [HttpGet("deleted")]
+        [Authorize] 
+        public async Task<ActionResult<IEnumerable<ProductDto>>> GetDeletedProducts()
+        {
+            var deletedProducts = await _context.Products
+                .Where(p => p.IsDeleted == true) 
+                .Select(p => new ProductDto
+                {
+                    Id = p.Id,
+                    Title = p.Title,
+                    Description = p.Description,
+                    CreationDate = p.CreationDate,
+                    CreationUserId = p.CreationUserId ?? string.Empty,
+                    ImageUrl = p.ImageUrl,
+                    Categories = p.Categories.Select(c => c.Name).ToList()
+
+                })
+                .ToListAsync();
+
+            return Ok(deletedProducts);
+        }
+        [HttpPost("{id}/restore")]
+        [Authorize] 
+        public async Task<IActionResult> RestoreProduct(int id)
+        {
+            var product = await _context.Products.FindAsync(id);
+
+            if (product == null)
+            {
+                return NotFound(new { message = "Nie znaleziono takiego produktu w systemie." });
+            }
+
+            if (!product.IsDeleted)
+            {
+                return BadRequest(new { message = "Ten produkt nie jest usunięty, więc nie można go przywrócić." });
+            }
+
+            product.IsDeleted = false;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = $"Produkt '{product.Title}' został pomyślnie przywrócony do katalogu!" });
+        }
+        [HttpPut("{id}")]
+        [Authorize]
+        public async Task<IActionResult> UpdateProduct(int id, [FromBody] UpdateProductDto dto)
+        {
+            var product = await _context.Products.FindAsync(id);
+
+            if (product == null || product.IsDeleted)
+            {
+                return NotFound(new { message = "Nie znaleziono produktu o podanym ID lub produkt znajduje się w koszu." });
+            }
+
+            product.Title = dto.Title;
+            product.Description = dto.Description;
+            product.ImageUrl = dto.ImageUrl;
+            product.Categories = await _context.Categories
+                .Where(c => dto.Categories.Contains(c.Id))
+                .ToListAsync();
+
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
     }
 }

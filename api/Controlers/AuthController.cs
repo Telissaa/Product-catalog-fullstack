@@ -18,11 +18,15 @@ namespace api.Controllers
     public class AuthController: ControllerBase
     {
         private readonly UserManager<IdentityUser> _userManager;
+        private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IConfiguration _configuration;
-
-        public AuthController(UserManager<IdentityUser> userManager, IConfiguration configuration)
+        public AuthController(
+            UserManager<IdentityUser> userManager, 
+            RoleManager<IdentityRole> roleManager, 
+            IConfiguration configuration)
         {
             _userManager = userManager;
+            _roleManager = roleManager;
             _configuration = configuration;
         }
 
@@ -54,6 +58,13 @@ namespace api.Controllers
             
             if (result.Succeeded)
             {
+                // Assign default "User" role to newly registered user
+                var roleAssignResult = await _userManager.AddToRoleAsync(user, "User");
+                if (!roleAssignResult.Succeeded)
+                {
+                    return StatusCode(500, new { message = "User created, but failed to assign default role." });
+                }
+
                 return Ok(new { message = "User has been successfully registered!" });
             }
 
@@ -87,6 +98,13 @@ namespace api.Controllers
                 new Claim(ClaimTypes.Email, user.Email!),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             };
+
+            // Add user roles to claims
+            var roles = await _userManager.GetRolesAsync(user);
+            foreach (var role in roles)
+            {
+                authClaims.Add(new Claim(ClaimTypes.Role, role));
+            }
 
             // Get secret key from configuration
             var jwtSecret = _configuration["JwtSettings:SecretKey"] ?? "SuperTajnyIPrzemyslamyKluczDoZabezpieczeniaAPI123!";
