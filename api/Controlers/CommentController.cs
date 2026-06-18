@@ -114,5 +114,34 @@ namespace api.Controlers
 
             return NoContent();
         }
+
+        [HttpPut("{id}")]
+        [Authorize]
+        public async Task<IActionResult> UpdateComment(int id, [FromBody] UpdateCommentDto updateCommentDto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { message = "Invalid input data." });
+            }
+
+            var loggedInUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var comment = await _context.Comments.FindAsync(id);
+
+            if (comment == null)
+            {
+                return NotFound(new { message = "Comment not found." });
+            }
+
+            // Sprawdzamy czy użytkownik, który próbuje edytować, to autor komentarza
+            if (comment.CreatorUserId != loggedInUserId)
+            {
+                return Forbid("You can only edit your own comments.");
+            }
+
+            comment.Description = updateCommentDto.Description;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Comment updated successfully." });
+        }
     }
 }

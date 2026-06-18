@@ -25,9 +25,6 @@ namespace api.Controllers
             _context = context;
         }
 
-        /// <summary>
-        /// Get all users with pagination. Only accessible to Admin role.
-        /// </summary>
         [HttpGet]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAllUsers([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
@@ -75,9 +72,7 @@ namespace api.Controllers
             }
         }
 
-        /// <summary>
-        /// Get a specific user by ID. Users can only see their own data unless they are Admin.
-        /// </summary>
+    
         [HttpGet("{id}")]
         [Authorize]
         public async Task<IActionResult> GetUserById(string id)
@@ -123,9 +118,6 @@ namespace api.Controllers
             }
         }
 
-        /// <summary>
-        /// Change a user's role. Only accessible to Admin role.
-        /// </summary>
         [HttpPut("{id}/role")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ChangeUserRole(string id, [FromBody] ChangeUserRoleDto changeRoleDto)

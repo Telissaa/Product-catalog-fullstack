@@ -4,7 +4,7 @@ import { jwtDecode } from "jwt-decode";
 interface User {
   id: string;
   username: string;
-  role: "Admin" | "User"; // Zgodnie z wymaganiami z PDF [cite: 109]
+  role: "Admin" | "User"; // Zgodnie z wymaganiami z PDF
 }
 
 interface AuthContextType {
@@ -27,11 +27,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const decoded: any = jwtDecode(jwtToken);
       
-      // Mapowanie standardowych claimów .NET Core na nasz obiekt
+      // 🔥 Szukamy w długich schematach ORAZ w krótkich kluczach, na które często ucina nowszy .NET
       const loggedUser: User = {
-        id: decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"],
-        username: decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"],
-        role: decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] || "User"
+        id: decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"] || decoded.nameid || decoded.sub || "",
+        username: decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"] || decoded.unique_name || decoded.name || "",
+        role: decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] || decoded.role || "User"
       };
       
       setUser(loggedUser);
