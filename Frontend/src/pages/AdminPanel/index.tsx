@@ -50,7 +50,6 @@ export default function AdminPanel() {
     if (!authLoading && token) {
       fetchUsers();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, token]);
 
   async function handleRoleChange(userId: string, newRole: string) {

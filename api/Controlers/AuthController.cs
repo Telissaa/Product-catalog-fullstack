@@ -1,13 +1,8 @@
-using System;
-using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 using System.Security.Claims;
 using System.Text;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using api.Dtos.Auth;
 
@@ -36,21 +31,21 @@ namespace api.Controllers
             // Validate model state (should be automatic with [Required] attributes, but explicit check is safer)
             if (!ModelState.IsValid)
             {
-                return BadRequest(new { message = "Invalid input data.", errors = ModelState.Values.SelectMany(v => v.Errors) });
+                return BadRequest(new { message = "Nieprawidłowe dane.", errors = ModelState.Values.SelectMany(v => v.Errors) });
             }
 
             // Check if user already exists by email
             var existingUser = await _userManager.FindByEmailAsync(model.Email);
             if (existingUser != null)
             {
-                return BadRequest(new { message = "User with this email already exists!" });
+                return BadRequest(new { message = "Użytkownik o tej nazwie już istnieje!" });
             }
 
             // Check if username is already taken
             var existingUserByUsername = await _userManager.FindByNameAsync(model.Username);
             if (existingUserByUsername != null)
             {
-                return BadRequest(new { message = "Username is already taken!" });
+                return BadRequest(new { message = "Użytkownik o tej nazwie już istnieje!" });
             }
 
             var user = new IdentityUser { UserName = model.Username, Email = model.Email };
@@ -62,7 +57,7 @@ namespace api.Controllers
                 var roleAssignResult = await _userManager.AddToRoleAsync(user, "User");
                 if (!roleAssignResult.Succeeded)
                 {
-                    return StatusCode(500, new { message = "User created, but failed to assign default role." });
+                    return StatusCode(500, new { message = "Użytkownik został utworzony, ale nie udało się przypisać domyślnej roli." });
                 }
 
                 return Ok(new { message = "User has been successfully registered!" });
@@ -79,7 +74,7 @@ namespace api.Controllers
             // Validate model state
             if (!ModelState.IsValid)
             {
-                return BadRequest(new { message = "Invalid input data.", errors = ModelState.Values.SelectMany(v => v.Errors) });
+                return BadRequest(new { message = "Nieprawidłowe dane", errors = ModelState.Values.SelectMany(v => v.Errors) });
             }
 
             var user = await _userManager.FindByEmailAsync(model.Email);
@@ -87,7 +82,7 @@ namespace api.Controllers
             // Check if user exists and password is correct
             if (user == null || !await _userManager.CheckPasswordAsync(user, model.Password))
             {
-                return Unauthorized(new { message = "Invalid email or password." });
+                return Unauthorized(new { message = "Nieprawidłowe hasło lub email" });
             }
 
             // Create claims (information encoded in the token - user ID and email)

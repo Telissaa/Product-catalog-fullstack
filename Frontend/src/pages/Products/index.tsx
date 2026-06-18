@@ -19,7 +19,7 @@ import {
   Select,
   MenuItem,
   Chip,
-  SelectChangeEvent
+  SelectChangeEvent,
 } from "@mui/material";
 
 import { styles } from "./ProductDetails.styles";
@@ -44,7 +44,9 @@ export default function ProductDetails() {
   const [editProductTitle, setEditProductTitle] = useState("");
   const [editProductDescription, setEditProductDescription] = useState("");
   const [editProductImageUrl, setEditProductImageUrl] = useState("");
-  const [editProductCategoryIds, setEditProductCategoryIds] = useState<number[]>([]);
+  const [editProductCategoryIds, setEditProductCategoryIds] = useState<
+    number[]
+  >([]);
   const [allCategories, setAllCategories] = useState<any[]>([]);
   const [productEditError, setProductEditError] = useState<string | null>(null);
 
@@ -76,13 +78,12 @@ export default function ProductDetails() {
   useEffect(() => {
     fetchProductData();
     fetchCategories();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const handleDeleteProduct = async () => {
     if (
       !window.confirm(
-        "Czy na pewno chcesz zarchiwizować ten produkt? Pojawi się on na liście usuniętych."
+        "Czy na pewno chcesz zarchiwizować ten produkt? Pojawi się on na liście usuniętych.",
       )
     )
       return;
@@ -109,7 +110,7 @@ export default function ProductDetails() {
     setEditProductTitle(product.title);
     setEditProductDescription(product.description);
     setEditProductImageUrl(product.imageUrl || "");
-    
+
     if (product.categories && allCategories.length > 0) {
       const currentCatIds = allCategories
         .filter((cat) => product.categories.includes(cat.name))
@@ -118,7 +119,7 @@ export default function ProductDetails() {
     } else {
       setEditProductCategoryIds([]);
     }
-    
+
     setIsProductEditModalOpen(true);
   };
 
@@ -146,7 +147,8 @@ export default function ProductDetails() {
         }),
       });
 
-      if (!response.ok) throw new Error("Nie udało się zaktualizować produktu.");
+      if (!response.ok)
+        throw new Error("Nie udało się zaktualizować produktu.");
 
       setIsProductEditModalOpen(false);
       fetchProductData();
@@ -155,10 +157,11 @@ export default function ProductDetails() {
     }
   };
 
-  // Dostosowano do obsługi komponentu Select z MUI
   const handleCategoryChange = (event: SelectChangeEvent<number[]>) => {
     const value = event.target.value;
-    setEditProductCategoryIds(typeof value === "string" ? value.split(",").map(Number) : value);
+    setEditProductCategoryIds(
+      typeof value === "string" ? value.split(",").map(Number) : value,
+    );
   };
 
   const handleCommentSubmit = async (e: React.FormEvent) => {
@@ -202,7 +205,7 @@ export default function ProductDetails() {
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       );
 
       if (!response.ok) throw new Error("Nie udało się usunąć komentarza.");
@@ -228,10 +231,11 @@ export default function ProductDetails() {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ id: commentId, description: editText }),
-        }
+        },
       );
 
-      if (!response.ok) throw new Error("Nie udało się zaktualizować komentarza.");
+      if (!response.ok)
+        throw new Error("Nie udało się zaktualizować komentarza.");
 
       setEditingCommentId(null);
       setEditText("");
@@ -244,7 +248,9 @@ export default function ProductDetails() {
   if (loading) {
     return (
       <Box sx={styles.pageWrapper}>
-        <Container><Typography variant="h5">Ładowanie produktu...</Typography></Container>
+        <Container>
+          <Typography variant="h5">Ładowanie produktu...</Typography>
+        </Container>
       </Box>
     );
   }
@@ -252,7 +258,9 @@ export default function ProductDetails() {
   if (!product) {
     return (
       <Box sx={styles.pageWrapper}>
-        <Container><Typography variant="h5">Produkt nie istnieje.</Typography></Container>
+        <Container>
+          <Typography variant="h5">Produkt nie istnieje.</Typography>
+        </Container>
       </Box>
     );
   }
@@ -266,7 +274,12 @@ export default function ProductDetails() {
           </Typography>
 
           {product.imageUrl && (
-            <Box component="img" src={product.imageUrl} alt={product.title} sx={styles.productImage} />
+            <Box
+              component="img"
+              src={product.imageUrl}
+              alt={product.title}
+              sx={styles.productImage}
+            />
           )}
 
           <Typography sx={styles.detailText}>
@@ -274,7 +287,10 @@ export default function ProductDetails() {
           </Typography>
 
           <Box sx={{ mb: 1.5, mt: 2 }}>
-            <Typography component="span" sx={{ fontWeight: "bold", mr: 1, color: "#333" }}>
+            <Typography
+              component="span"
+              sx={{ fontWeight: "bold", mr: 1, color: "#333" }}
+            >
               Kategorie:
             </Typography>
             {product.categories && product.categories.length > 0 ? (
@@ -282,7 +298,12 @@ export default function ProductDetails() {
                 <Chip key={cat} label={cat} size="small" sx={styles.chip} />
               ))
             ) : (
-              <Typography component="span" sx={{ color: "#aaa", fontStyle: "italic" }}>Brak przypisanych kategorii</Typography>
+              <Typography
+                component="span"
+                sx={{ color: "#aaa", fontStyle: "italic" }}
+              >
+                Brak przypisanych kategorii
+              </Typography>
             )}
           </Box>
 
@@ -290,15 +311,24 @@ export default function ProductDetails() {
             <strong>Autor:</strong> {product.creatorUserName}
           </Typography>
           <Typography sx={styles.detailText}>
-            <strong>Dodano:</strong> {new Date(product.creationDate).toLocaleDateString("pl-PL")}
+            <strong>Dodano:</strong>{" "}
+            {new Date(product.creationDate).toLocaleDateString("pl-PL")}
           </Typography>
 
           {user?.role === "Admin" && (
             <Box sx={styles.adminActionBox}>
-              <Button variant="contained" sx={styles.btnEditInfo} onClick={handleOpenProductEdit}>
+              <Button
+                variant="contained"
+                sx={styles.btnEditInfo}
+                onClick={handleOpenProductEdit}
+              >
                 Edytuj produkt
               </Button>
-              <Button variant="contained" sx={styles.btnDeleteWarning} onClick={handleDeleteProduct}>
+              <Button
+                variant="contained"
+                sx={styles.btnDeleteWarning}
+                onClick={handleDeleteProduct}
+              >
                 Usuń produkt
               </Button>
             </Box>
@@ -307,12 +337,23 @@ export default function ProductDetails() {
 
         {isProductEditModalOpen && (
           <Paper elevation={2} sx={styles.editModalCard}>
-            <Typography variant="h5" sx={{ color: "#20B6F3", fontWeight: "bold", mb: 2 }}>
+            <Typography
+              variant="h5"
+              sx={{ color: "#20B6F3", fontWeight: "bold", mb: 2 }}
+            >
               Edytuj produkt
             </Typography>
-            {productEditError && <Typography color="error" sx={{ mb: 2 }}>{productEditError}</Typography>}
-            
-            <Box component="form" onSubmit={handleProductEditSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            {productEditError && (
+              <Typography color="error" sx={{ mb: 2 }}>
+                {productEditError}
+              </Typography>
+            )}
+
+            <Box
+              component="form"
+              onSubmit={handleProductEditSubmit}
+              sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+            >
               <TextField
                 label="Tytuł"
                 fullWidth
@@ -336,7 +377,7 @@ export default function ProductDetails() {
                 value={editProductImageUrl}
                 onChange={(e) => setEditProductImageUrl(e.target.value)}
               />
-              
+
               <FormControl size="small" fullWidth>
                 <InputLabel>Kategorie</InputLabel>
                 <Select
@@ -354,10 +395,18 @@ export default function ProductDetails() {
               </FormControl>
 
               <Box sx={{ display: "flex", gap: 2, mt: 1 }}>
-                <Button type="submit" variant="contained" sx={styles.btnSuccess}>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  sx={styles.btnSuccess}
+                >
                   Zapisz zmiany
                 </Button>
-                <Button variant="outlined" sx={styles.btnCancel} onClick={() => setIsProductEditModalOpen(false)}>
+                <Button
+                  variant="outlined"
+                  sx={styles.btnCancel}
+                  onClick={() => setIsProductEditModalOpen(false)}
+                >
                   Anuluj
                 </Button>
               </Box>
@@ -375,7 +424,9 @@ export default function ProductDetails() {
               <TableHead sx={styles.tableHead}>
                 <TableRow>
                   <TableCell sx={styles.tableHeadCell}>Treść</TableCell>
-                  <TableCell sx={styles.tableHeadCell}>Data utworzenia</TableCell>
+                  <TableCell sx={styles.tableHeadCell}>
+                    Data utworzenia
+                  </TableCell>
                   <TableCell sx={styles.tableHeadCell}>Autor</TableCell>
                   <TableCell sx={styles.tableHeadCell}></TableCell>
                 </TableRow>
@@ -385,7 +436,7 @@ export default function ProductDetails() {
                   const loggedInUser = user
                     ? (user as any).username ||
                       (user as any).unique_name ||
-                      (user as any)["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"] ||
+                      (user as any)||
                       ""
                     : "";
 
@@ -404,7 +455,9 @@ export default function ProductDetails() {
                         )}
                       </TableCell>
                       <TableCell>
-                        {new Date(comment.creationDate).toLocaleDateString("pl-PL")}
+                        {new Date(comment.creationDate).toLocaleDateString(
+                          "pl-PL",
+                        )}
                       </TableCell>
                       <TableCell sx={{ fontWeight: "bold", color: "#555" }}>
                         {comment.creatorUserName}
@@ -413,16 +466,29 @@ export default function ProductDetails() {
                         <Box sx={styles.actionCell}>
                           {editingCommentId === comment.id ? (
                             <>
-                              <Button size="small" variant="contained" sx={styles.btnSuccess} onClick={() => handleCommentEditSubmit(comment.id)}>
+                              <Button
+                                size="small"
+                                variant="contained"
+                                sx={styles.btnSuccess}
+                                onClick={() =>
+                                  handleCommentEditSubmit(comment.id)
+                                }
+                              >
                                 Zapisz
                               </Button>
-                              <Button size="small" variant="outlined" sx={styles.btnCancel} onClick={() => setEditingCommentId(null)}>
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                sx={styles.btnCancel}
+                                onClick={() => setEditingCommentId(null)}
+                              >
                                 Anuluj
                               </Button>
                             </>
                           ) : (
                             loggedInUser &&
-                            loggedInUser.toLowerCase() === comment.creatorUserName?.toLowerCase() && (
+                            loggedInUser.toLowerCase() ===
+                              comment.creatorUserName?.toLowerCase() && (
                               <Button
                                 size="small"
                                 variant="contained"
@@ -463,7 +529,11 @@ export default function ProductDetails() {
 
         {user && !isModalOpen && (
           <Box sx={{ mt: 3 }}>
-            <Button variant="contained" sx={styles.btnPrimary} onClick={() => setIsModalOpen(true)}>
+            <Button
+              variant="contained"
+              sx={styles.btnPrimary}
+              onClick={() => setIsModalOpen(true)}
+            >
               Dodaj komentarz
             </Button>
           </Box>
@@ -471,11 +541,22 @@ export default function ProductDetails() {
 
         {isModalOpen && (
           <Paper elevation={2} sx={styles.commentFormCard}>
-            <Typography variant="h6" sx={{ color: "#8415b2", fontWeight: "bold", mb: 2 }}>
+            <Typography
+              variant="h6"
+              sx={{ color: "#8415b2", fontWeight: "bold", mb: 2 }}
+            >
               Nowy komentarz
             </Typography>
-            {error && <Typography color="error" sx={{ mb: 2 }}>{error}</Typography>}
-            <Box component="form" onSubmit={handleCommentSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            {error && (
+              <Typography color="error" sx={{ mb: 2 }}>
+                {error}
+              </Typography>
+            )}
+            <Box
+              component="form"
+              onSubmit={handleCommentSubmit}
+              sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+            >
               <TextField
                 multiline
                 rows={3}
@@ -485,10 +566,18 @@ export default function ProductDetails() {
                 onChange={(e) => setCommentText(e.target.value)}
               />
               <Box sx={{ display: "flex", gap: 2 }}>
-                <Button type="submit" variant="contained" sx={styles.btnSuccess}>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  sx={styles.btnSuccess}
+                >
                   Zapisz
                 </Button>
-                <Button variant="outlined" sx={styles.btnCancel} onClick={() => setIsModalOpen(false)}>
+                <Button
+                  variant="outlined"
+                  sx={styles.btnCancel}
+                  onClick={() => setIsModalOpen(false)}
+                >
                   Anuluj
                 </Button>
               </Box>

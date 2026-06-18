@@ -11,6 +11,7 @@ import {
 } from "@mui/material";
 
 import { styles } from "./Register.styles";
+import { registerToApp } from "../../store/auth";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -35,32 +36,12 @@ export default function Register() {
     }
 
     try {
-      const response = await fetch("http://localhost:5249/api/Auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          username: username,
-          email: email,
-          password: password,
-        }),
-      });
-
-      const responseText = await response.text();
-      const data = responseText ? JSON.parse(responseText) : null;
-
-      if (!response.ok) {
-        // Obsługa błędów zwróconych przez serwer
-        throw new Error(data?.message || "Coś poszło nie tak podczas rejestracji.");
-      }
-
+      await registerToApp(username, email, password);
       setSuccess(true);
       
-      // Przekierowanie do logowania po pomyślnej rejestracji
       setTimeout(() => {
         navigate("/api/Auth/login");
-      }, 2000);
+      }, 1000);
 
     } catch (err: any) {
       setError(err.message || "Brak połączenia z serwerem.");

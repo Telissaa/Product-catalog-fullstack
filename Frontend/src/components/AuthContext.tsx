@@ -4,7 +4,7 @@ import { jwtDecode } from "jwt-decode";
 interface User {
   id: string;
   username: string;
-  role: "Admin" | "User"; // Zgodnie z wymaganiami z PDF
+  role: "Admin" | "User";
 }
 
 interface AuthContextType {
@@ -27,11 +27,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const decoded: any = jwtDecode(jwtToken);
       
-      // 🔥 Szukamy w długich schematach ORAZ w krótkich kluczach, na które często ucina nowszy .NET
       const loggedUser: User = {
-        id: decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"] || decoded.nameid || decoded.sub || "",
-        username: decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"] || decoded.unique_name || decoded.name || "",
-        role: decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] || decoded.role || "User"
+        id:  decoded.nameid || decoded.sub || "",
+        username: decoded.unique_name || decoded.name || "",
+        role:  decoded.role || "User"
       };
       
       setUser(loggedUser);

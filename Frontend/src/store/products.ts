@@ -3,11 +3,8 @@ import {
   ProductsFromApiType,
   ProductType,
 } from "../types/products";
+import { productsEndpoint } from "./constants";
 
-const apiUrl = "http://localhost:5249/api";
-const productsEndpoint = `${apiUrl}/products`;
-
-// 🔥 Poprawiona funkcja: teraz poprawnie przyjmuje obiekt zgodny z IProductsData
 export const getProductsData = async ({
   search,
   category,

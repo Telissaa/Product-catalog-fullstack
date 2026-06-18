@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import  { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../components/AuthContext"; 
 import { 
@@ -12,6 +12,7 @@ import {
 } from "@mui/material";
 
 import { styles } from "./Login.styles";
+import { loginToApp } from "../../store/auth";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -22,7 +23,7 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
@@ -34,24 +35,7 @@ export default function Login() {
     }
 
     try {
-      const response = await fetch("http://localhost:5249/api/Auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: email,
-          password: password,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Błędny login lub hasło.");
-      }
-
-      // Zapisanie tokenu w AuthContext
+      const data = await loginToApp(email, password);
       login(data.token); 
       navigate("/");
 
