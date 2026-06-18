@@ -6,7 +6,10 @@ import ProductDetails from "./pages/Products";
 import { AuthProvider, useAuth } from "./components/AuthContext";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-// import AdminUsers from "./pages/AdminUsers";
+import AdminPanel from "./pages/AdminPanel";
+import CategoryPanel from "./pages/CategoryPanel";
+import DeletedProducts from "./pages/DeletedProducts";
+import AddProduct from "./pages/AddProducts";
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -34,10 +37,17 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/products" element={<Navigate to="/" replace />} />
             <Route path="/products/:id" element={<ProductDetails />} />
-            
+
             {}
             <Route path="/api/Auth/login" element={<Login />} />
             <Route path="/api/Auth/register" element={<Register />} />
+            <Route path="/add-product" element={<AddProduct />} />
+            <Route path="/admin/users" element={<AdminPanel />} />
+            <Route path="/admin/categories" element={<CategoryPanel />} />
+            <Route
+              path="/admin/deleted-products"
+              element={<DeletedProducts />}
+            />
 
             {/* 🔥 NOWA ŚCIEŻKA: Panel zarządzania rolami użytkowników (Punkt 3.c na ocenę 5)
                 Dostępna TYLKO dla Admina dzięki owinięciu w <AdminRoute> */}

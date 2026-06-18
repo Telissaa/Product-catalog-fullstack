@@ -7,6 +7,7 @@ import {
 const apiUrl = "http://localhost:5249/api";
 const productsEndpoint = `${apiUrl}/products`;
 
+// 🔥 Poprawiona funkcja: teraz poprawnie przyjmuje obiekt zgodny z IProductsData
 export const getProductsData = async ({
   search,
   category,
@@ -17,6 +18,7 @@ export const getProductsData = async ({
     if (search) queryParams.append("search", search);
     if (category) queryParams.append("category", category);
     if (pageNumber) queryParams.append("pageNumber", pageNumber.toString());
+
     const response = await fetch(
       `${productsEndpoint}?${queryParams.toString()}`,
     );

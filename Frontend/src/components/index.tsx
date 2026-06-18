@@ -9,13 +9,20 @@ export default function Navbar() {
       <Link to="/">Strona Główna</Link>
 
       {user ? (
-        // Co widzi ZALOGOWANY użytkownik 
         <>
+          {/* Widoczne tylko dla Admina */}
+          {user.role === "Admin" && (
+            <>
+              <Link to="/admin/users">Panel Admina</Link>
+              <Link to="/admin/categories">Kategorie</Link>
+              <Link to="/admin/deleted-products">Usunięte produkty</Link>
+            </>
+          )}
+          <Link to="/add-product">Dodaj produkt</Link>
           <span>Zalogowany jako: {user.username} ({user.role})</span>
           <button onClick={logout}>Wyloguj się</button>
         </>
       ) : (
-        // Co widzi NIEZALOGOWANY użytkownik
         <>
           <Link to="/api/Auth/login">Logowanie</Link>
           <Link to="/api/Auth/register">Rejestracja</Link>

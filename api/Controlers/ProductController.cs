@@ -23,6 +23,7 @@ namespace api.Controllers
         {
             int pageSize = 15;
             IQueryable<Product> query = _context.Products
+                .Include(p => p.Creator)
                 .Include(p => p.Categories)
                 .Include(p => p.Comments) // Include comments
                     .ThenInclude(c => c.Creator)
@@ -85,6 +86,7 @@ namespace api.Controllers
         {
             var product = await _context.Products
                 .Where(p => !p.IsDeleted && p.Id == id)
+                .Include(p => p.Creator)
                 .Include(p => p.Categories)
                 .Include(p => p.Comments)
                     .ThenInclude(c => c.Creator)
@@ -119,7 +121,9 @@ namespace api.Controllers
         [Authorize]
         public async Task<ActionResult<ProductDto>> CreateProduct(CreateProductDto productDto)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) 
+                         ?? User.FindFirstValue("sub") 
+                         ?? User.FindFirstValue(ClaimTypes.Name);
             if (string.IsNullOrWhiteSpace(userId))
             {
                 return Unauthorized(new { message = "Nie rozpoznano użytkownika. Zaloguj się ponownie." });
@@ -151,6 +155,7 @@ namespace api.Controllers
 
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
+            await _context.Entry(product).Reference(p => p.Creator).LoadAsync();
 
             var returnDto = new ProductDto
             {
@@ -169,7 +174,7 @@ namespace api.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize]
+        [Authorize (Roles = "Admin")]
         public async Task<IActionResult> DeleteProduct(int id)
         {
             var product = await _context.Products.FindAsync(id);
@@ -188,11 +193,10 @@ namespace api.Controllers
 
             await _context.SaveChangesAsync();
 
-            // standard w API po poprawnym usunięciu
             return NoContent();
         }
         [HttpGet("deleted")]
-        [Authorize] 
+        [Authorize (Roles = "Admin")] 
         public async Task<ActionResult<IEnumerable<ProductDto>>> GetDeletedProducts()
         {
             var deletedProducts = await _context.Products
@@ -214,8 +218,8 @@ namespace api.Controllers
 
             return Ok(deletedProducts);
         }
-        [HttpPost("{id}/restore")]
-        [Authorize] 
+        [HttpPut("{id}/restore")]
+        [Authorize (Roles = "Admin")] 
         public async Task<IActionResult> RestoreProduct(int id)
         {
             var product = await _context.Products.FindAsync(id);

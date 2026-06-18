@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../../components/AuthContext";
 import {
   Container,
@@ -14,19 +14,27 @@ import {
 
 export default function ProductDetails() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { user, token } = useAuth();
 
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // Stany dla dodawania nowego komentarza
+  // Stany dla komentarzy
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [error, setError] = useState<string | null>(null);
-
-  // 🔥 NOWE STANY DLA EDYCJI KOMENTARZA
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
   const [editText, setEditText] = useState("");
+
+  // 🔥 Stany dla edycji produktu
+  const [isProductEditModalOpen, setIsProductEditModalOpen] = useState(false);
+  const [editProductTitle, setEditProductTitle] = useState("");
+  const [editProductDescription, setEditProductDescription] = useState("");
+  const [editProductImageUrl, setEditProductImageUrl] = useState("");
+  const [editProductCategoryIds, setEditProductCategoryIds] = useState<number[]>([]);
+  const [allCategories, setAllCategories] = useState<any[]>([]);
+  const [productEditError, setProductEditError] = useState<string | null>(null);
 
   const fetchProductData = async () => {
     try {
@@ -41,9 +49,109 @@ export default function ProductDetails() {
     }
   };
 
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch("http://localhost:5249/api/Categories");
+      if (response.ok) {
+        const data = await response.json();
+        setAllCategories(data.categories || data);
+      }
+    } catch (err) {
+      console.error("Błąd pobierania kategorii:", err);
+    }
+  };
+
   useEffect(() => {
     fetchProductData();
+    fetchCategories();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  // Usuwanie produktu
+  const handleDeleteProduct = async () => {
+    if (
+      !window.confirm(
+        "Czy na pewno chcesz zarchiwizować ten produkt? Pojawi się on na liście usuniętych."
+      )
+    )
+      return;
+
+    try {
+      const response = await fetch(`http://localhost:5249/api/products/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) throw new Error("Błąd podczas usuwania produktu.");
+
+      alert("Produkt został pomyślnie usunięty!");
+      navigate("/");
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  // 🔥 Otwieranie modalu edycji produktu z aktualnymi danymi
+  const handleOpenProductEdit = () => {
+    setProductEditError(null);
+    setEditProductTitle(product.title);
+    setEditProductDescription(product.description);
+    setEditProductImageUrl(product.imageUrl || "");
+    
+    // Dopasowujemy nazwy kategorii produktu do ich ID z pełnej listy
+    if (product.categories && allCategories.length > 0) {
+      const currentCatIds = allCategories
+        .filter((cat) => product.categories.includes(cat.name))
+        .map((cat) => cat.id);
+      setEditProductCategoryIds(currentCatIds);
+    } else {
+      setEditProductCategoryIds([]);
+    }
+    
+    setIsProductEditModalOpen(true);
+  };
+
+  // 🔥 Zapisywanie edycji produktu
+  const handleProductEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setProductEditError(null);
+
+    if (!editProductTitle.trim()) {
+      setProductEditError("Tytuł produktu nie może być pusty!");
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:5249/api/products/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          title: editProductTitle,
+          description: editProductDescription,
+          imageUrl: editProductImageUrl,
+          categories: editProductCategoryIds, // Lista ID kategorii zgodnie z DTO
+        }),
+      });
+
+      if (!response.ok) throw new Error("Nie udało się zaktualizować produktu.");
+
+      setIsProductEditModalOpen(false);
+      fetchProductData(); // Odświeżamy widok
+    } catch (err: any) {
+      setProductEditError(err.message || "Błąd podczas edycji produktu.");
+    }
+  };
+
+  // Obsługa wielokrotnego wyboru kategorii
+  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedOptions = Array.from(e.target.selectedOptions, (option) => parseInt(option.value));
+    setEditProductCategoryIds(selectedOptions);
+  };
 
   // Obsługa dodawania nowego komentarza
   const handleCommentSubmit = async (e: React.FormEvent) => {
@@ -78,7 +186,27 @@ export default function ProductDetails() {
     }
   };
 
-  // 🔥 NOWA FUNKCJA: Obsługa wysyłania edycji do API
+  // Usuwanie komentarza
+  const handleDeleteComment = async (commentId: number) => {
+    if (!window.confirm("Czy na pewno chcesz usunąć ten komentarz?")) return;
+
+    try {
+      const response = await fetch(
+        `http://localhost:5249/api/Comment/${commentId}`,
+        {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (!response.ok) throw new Error("Nie udało się usunąć komentarza.");
+      fetchProductData();
+    } catch (err: any) {
+      alert(err.message || "Błąd usuwania komentarza.");
+    }
+  };
+
+  // Edycja komentarza
   const handleCommentEditSubmit = async (commentId: number) => {
     if (!editText.trim()) {
       alert("Treść komentarza nie może być pusta!");
@@ -94,17 +222,12 @@ export default function ProductDetails() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({
-            id: commentId,
-            description: editText,
-          }),
+          body: JSON.stringify({ id: commentId, description: editText }),
         }
       );
 
-      if (!response.ok)
-        throw new Error("Nie udało się zaktualizować komentarza.");
+      if (!response.ok) throw new Error("Nie udało się zaktualizować komentarza.");
 
-      // Resetujemy stany edycji i pobieramy świeże dane
       setEditingCommentId(null);
       setEditText("");
       fetchProductData();
@@ -113,8 +236,8 @@ export default function ProductDetails() {
     }
   };
 
-  if (loading) return <div>Ładowanie produktu...</div>;
-  if (!product) return <div>Produkt nie istnieje.</div>;
+  if (loading) return <Container>Ładowanie produktu...</Container>;
+  if (!product) return <Container>Produkt nie istnieje.</Container>;
 
   return (
     <Container component="main">
@@ -124,47 +247,104 @@ export default function ProductDetails() {
           <img
             src={product.imageUrl}
             alt={product.title}
-            style={{ maxWidth: "300px", display: "block" }}
+            style={{ maxWidth: "300px", display: "block", marginBottom: "15px" }}
           />
         )}
         <p>
           <strong>Opis:</strong> {product.description}
         </p>
+        
+        {/* 🔥 NOWE DANE PRODUKTU */}
         <p>
-          <small>
-            Dodano: {new Date(product.creationDate).toLocaleDateString("pl-PL")}
-          </small>
+          <strong>Kategorie:</strong>{" "}
+          {product.categories && product.categories.length > 0 
+            ? product.categories.join(", ") 
+            : "Brak przypisanych kategorii"}
         </p>
+        <p>
+          <strong>Autor:</strong> {product.creatorUserName}
+        </p>
+        <p>
+          <strong>Dodano:</strong>{" "}
+          {new Date(product.creationDate).toLocaleDateString("pl-PL")}
+        </p>
+
+        {/* Przyciski Admina */}
+        {user?.role === "Admin" && (
+          <div style={{ marginTop: "15px", marginBottom: "15px", display: "flex", gap: "10px" }}>
+            <button
+              onClick={handleOpenProductEdit}
+            >
+              Edytuj produkt
+            </button>
+            <button
+              onClick={handleDeleteProduct}
+            >
+              Usuń produkt
+            </button>
+          </div>
+        )}
       </div>
+
+      {/* 🔥 FORMULARZ EDYCJI PRODUKTU (MODAL) */}
+      {isProductEditModalOpen && (
+        <div style={{ border: "2px solid #ed6c02", padding: "20px", marginBottom: "20px", backgroundColor: "#fff4e5" }}>
+          <h3>Edytuj produkt</h3>
+          {productEditError && <p style={{ color: "red" }}>{productEditError}</p>}
+          <form onSubmit={handleProductEditSubmit} style={{ display: "flex", flexDirection: "column", gap: "10px", maxWidth: "400px" }}>
+            <label>
+              <strong>Tytuł:</strong>
+              <input
+                type="text"
+                value={editProductTitle}
+                onChange={(e) => setEditProductTitle(e.target.value)}
+                style={{ width: "100%", padding: "5px" }}
+              />
+            </label>
+            <label>
+              <strong>Opis:</strong>
+              <textarea
+                rows={4}
+                value={editProductDescription}
+                onChange={(e) => setEditProductDescription(e.target.value)}
+                style={{ width: "100%", padding: "5px" }}
+              />
+            </label>
+            <label>
+              <strong>URL Obrazka:</strong>
+              <input
+                type="text"
+                value={editProductImageUrl}
+                onChange={(e) => setEditProductImageUrl(e.target.value)}
+                style={{ width: "100%", padding: "5px" }}
+              />
+            </label>
+            <label>
+              <strong>Kategorie (przytrzymaj Ctrl, by wybrać wiele):</strong>
+              <select
+                multiple
+                value={editProductCategoryIds.map(String)}
+                onChange={handleCategoryChange}
+                style={{ width: "100%", padding: "5px", height: "100px" }}
+              >
+                {allCategories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+              <button type="submit" style={{ padding: "8px 16px", fontWeight: "bold" }}>Zapisz zmiany</button>
+              <button type="button" onClick={() => setIsProductEditModalOpen(false)} style={{ padding: "8px 16px" }}>Anuluj</button>
+            </div>
+          </form>
+        </div>
+      )}
 
       <hr />
 
       <h2>Komentarze</h2>
-
-      {/* 🛠️ ZRZUT PAMIĘCI OBIEKTU USER */}
-      <pre
-        style={{
-          background: "#222",
-          color: "#0f0",
-          padding: "15px",
-          borderRadius: "5px",
-          overflowX: "auto",
-        }}
-      >
-        {JSON.stringify(user, null, 2)}
-      </pre>
-
-      {/* 🛠️ LINIA DIAGNOSTYCZNA */}
-      <div
-        style={{
-          backgroundColor: "#eee",
-          padding: "10px",
-          marginBottom: "10px",
-        }}
-      >
-        <strong>Profilaktyka:</strong> Zalogowany jako:{" "}
-        <code>{JSON.stringify(user)}</code>
-      </div>
 
       {product.comments && product.comments.length > 0 ? (
         <TableContainer component={Paper}>
@@ -179,7 +359,6 @@ export default function ProductDetails() {
             </TableHead>
             <TableBody>
               {product.comments.map((comment: any) => {
-                // 🧠 Wyciągamy login z obiektu user bez względu na to, jak nazwał go backend
                 const loggedInUser = user
                   ? (user as any).username ||
                     (user as any).unique_name ||
@@ -203,38 +382,20 @@ export default function ProductDetails() {
                         comment.description
                       )}
                     </TableCell>
-
                     <TableCell>
-                      {new Date(comment.creationDate).toLocaleDateString(
-                        "pl-PL"
-                      )}
+                      {new Date(comment.creationDate).toLocaleDateString("pl-PL")}
                     </TableCell>
-
-                    <TableCell>
-                      {comment.creatorUserName}
-                      <div style={{ fontSize: "10px", color: "gray" }}>
-                        Porównanie: {loggedInUser || "brak"} VS{" "}
-                        {comment.creatorUserName}
-                      </div>
-                    </TableCell>
-
+                    <TableCell>{comment.creatorUserName}</TableCell>
+                    
                     <TableCell>
                       {editingCommentId === comment.id ? (
                         <>
-                          <button
-                            onClick={() => handleCommentEditSubmit(comment.id)}
-                          >
-                            Zapisz
-                          </button>
-                          <button onClick={() => setEditingCommentId(null)}>
-                            Anuluj
-                          </button>
+                          <button onClick={() => handleCommentEditSubmit(comment.id)}>Zapisz</button>
+                          <button onClick={() => setEditingCommentId(null)}>Anuluj</button>
                         </>
                       ) : (
-                        // Porównujemy bezpiecznie wyciągnięty login z autorem komentarza
                         loggedInUser &&
-                        loggedInUser.toLowerCase() ===
-                          comment.creatorUserName?.toLowerCase() && (
+                        loggedInUser.toLowerCase() === comment.creatorUserName?.toLowerCase() && (
                           <button
                             onClick={() => {
                               setEditingCommentId(comment.id);
@@ -244,6 +405,15 @@ export default function ProductDetails() {
                             Edytuj
                           </button>
                         )
+                      )}
+
+                      {user?.role === "Admin" && (
+                        <button
+                          onClick={() => handleDeleteComment(comment.id)}
+                          style={{ marginLeft: "10px" }}
+                        >
+                          Usuń (Admin)
+                        </button>
                       )}
                     </TableCell>
                   </TableRow>
@@ -271,9 +441,7 @@ export default function ProductDetails() {
           }}
         >
           <h3>Nowy komentarz</h3>
-
           {error && <p style={{ color: "red" }}>{error}</p>}
-
           <form onSubmit={handleCommentSubmit}>
             <textarea
               rows={4}
