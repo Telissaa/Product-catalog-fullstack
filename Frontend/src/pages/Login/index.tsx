@@ -7,8 +7,11 @@ import {
   Typography, 
   TextField, 
   Button, 
-  Alert 
+  Alert,
+  Paper
 } from "@mui/material";
+
+import { styles } from "./Login.styles";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -48,7 +51,7 @@ export default function Login() {
         throw new Error(data.message || "Błędny login lub hasło.");
       }
 
-      // Zapisanie tokenu w AuthContext i wyciągnięcie roli (Admin/User)
+      // Zapisanie tokenu w AuthContext
       login(data.token); 
       navigate("/");
 
@@ -60,58 +63,69 @@ export default function Login() {
   };
 
   return (
-    <Container component="main" maxWidth="xs">
-      <Box>
-        <Typography component="h1" variant="h5">
-          Zaloguj się
-        </Typography>
+    <Box sx={styles.pageWrapper}>
+      <Container component="main" maxWidth="xs">
+        <Paper elevation={3} sx={styles.card}>
+          <Typography component="h1" variant="h5" sx={styles.header}>
+            Zaloguj się
+          </Typography>
 
-        {error && <Alert severity="error">{error}</Alert>}
+          {error && (
+            <Alert severity="error" sx={{ width: "100%", mb: 2 }}>
+              {error}
+            </Alert>
+          )}
 
-        <Box component="form" onSubmit={handleSubmit} noValidate>
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            id="email"
-            label="Adres E-mail"
-            name="email"
-            autoComplete="email"
-            autoFocus
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            disabled={loading}
-          />
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            name="password"
-            label="Hasło"
-            type="password"
-            id="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            disabled={loading}
-          />
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            disabled={loading}
-          >
-            {loading ? "Logowanie..." : "Zaloguj się"}
-          </Button>
-          
-          <Box>
-            <Typography variant="body2">
-              Nie masz jeszcze konta?{" "}
-              <Link to="/register">Zarejestruj się</Link>
-            </Typography>
+          <Box component="form" onSubmit={handleSubmit} noValidate sx={styles.form}>
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              id="email"
+              label="Adres E-mail"
+              name="email"
+              autoComplete="email"
+              autoFocus
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={loading}
+              sx={styles.textField}
+            />
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              name="password"
+              label="Hasło"
+              type="password"
+              id="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={loading}
+              sx={styles.textField}
+            />
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              disabled={loading}
+              sx={styles.submitButton}
+            >
+              {loading ? "Logowanie..." : "Zaloguj się"}
+            </Button>
+            
+            <Box sx={styles.linkContainer}>
+              <Typography variant="body2" sx={styles.linkText}>
+                Nie masz jeszcze konta?{" "}
+                <Link to="/api/Auth/register" style={styles.linkAction}>
+                  Zarejestruj się
+                </Link>
+              </Typography>
+            </Box>
           </Box>
-        </Box>
-      </Box>
-    </Container>
+        </Paper>
+      </Container>
+    </Box>
   );
 }

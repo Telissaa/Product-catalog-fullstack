@@ -11,11 +11,15 @@ import {
   Paper,
   Select,
   MenuItem,
-  SelectChangeEvent
+  SelectChangeEvent,
+  Box,
+  Typography,
+  Alert
 } from "@mui/material";
 
+import { styles } from "./AdminPanel.styles";
+
 export default function AdminPanel() {
-  // 🔥 1. Wyciągamy isLoading z kontekstu (zmieniamy nazwę na authLoading, żeby nie myliło się z ładowaniem tabeli)
   const { user, token, isLoading: authLoading } = useAuth();
   
   const [usersList, setUsersList] = useState<any[]>([]);
@@ -42,7 +46,6 @@ export default function AdminPanel() {
     }
   };
 
-  // 🔥 2. Zmieniamy useEffect: Pobieramy dane TYLKO wtedy, gdy autoryzacja skończyła się ładować i mamy token
   useEffect(() => {
     if (!authLoading && token) {
       fetchUsers();
@@ -50,68 +53,6 @@ export default function AdminPanel() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, token]);
 
-  // 🔥 3. KROK BLOKUJĄCY: Jeśli kontekst jeszcze czyta localStorage, nie pokazujemy nic poza komunikatem oczekiwania
-  if (authLoading) {
-    return <Container>Sprawdzanie autoryzacji...</Container>;
-  }
-
-  // 🔥 4. Dopiero teraz (gdy authLoading jest false) bezpiecznie sprawdzamy rolę
-  if (user?.role !== "Admin") {
-    return (
-      <Container>
-        <h2>Brak dostępu</h2>
-        <p>Ta strona jest dostępna wyłącznie dla administratorów.</p>
-      </Container>
-    );
-  }
-
-  if (loading) return <Container>Ładowanie użytkowników...</Container>;
-
-  return (
-    <Container component="main">
-      <h1>Panel Administratora</h1>
-      
-      {error && <p>Błąd: {error}</p>}
-      {successMessage && <p>{successMessage}</p>}
-
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>ID</TableCell>
-              <TableCell>Nazwa użytkownika</TableCell>
-              <TableCell>Email</TableCell>
-              <TableCell>Obecna rola</TableCell>
-              <TableCell>Zmień rolę</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {usersList.map((u: any) => (
-              <TableRow key={u.id}>
-                <TableCell>{u.id}</TableCell>
-                <TableCell>{u.username}</TableCell>
-                <TableCell>{u.email}</TableCell>
-                <TableCell>{u.role}</TableCell>
-                <TableCell>
-                  <Select
-                    size="small"
-                    value={u.role}
-                    disabled={u.username === user.username} 
-                    onChange={(e: SelectChangeEvent) => handleRoleChange(u.id, e.target.value)}
-                  >
-                    <MenuItem value="User">User</MenuItem>
-                    <MenuItem value="Admin">Admin</MenuItem>
-                  </Select>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-    </Container>
-  );
-
-  // Dodatkowa funkcja pomocnicza (musi być wewnątrz komponentu)
   async function handleRoleChange(userId: string, newRole: string) {
     setError(null);
     setSuccessMessage(null);
@@ -134,4 +75,97 @@ export default function AdminPanel() {
       setError(err.message);
     }
   }
+
+  // Weryfikacja stanu autoryzacji
+  if (authLoading) {
+    return (
+      <Box sx={styles.pageWrapper}>
+        <Typography variant="h6">Sprawdzanie autoryzacji...</Typography>
+      </Box>
+    );
+  }
+
+  // Weryfikacja uprawnień administracyjnych
+  if (user?.role !== "Admin") {
+    return (
+      <Box sx={styles.pageWrapper}>
+        <Paper elevation={3} sx={styles.accessDeniedCard}>
+          <Typography variant="h4" color="error" sx={{ mb: 2, fontWeight: "bold" }}>
+            Brak dostępu
+          </Typography>
+          <Typography variant="body1">
+            Ta strona jest dostępna wyłącznie dla administratorów.
+          </Typography>
+        </Paper>
+      </Box>
+    );
+  }
+
+  // Weryfikacja pobierania danych
+  if (loading) {
+    return (
+      <Box sx={styles.pageWrapper}>
+        <Typography variant="h6">Ładowanie użytkowników...</Typography>
+      </Box>
+    );
+  }
+
+  return (
+    <Box sx={styles.pageWrapper}>
+      <Paper elevation={3} sx={styles.card}>
+        <Typography component="h1" variant="h4" sx={styles.header}>
+          Panel Administratora
+        </Typography>
+        
+        {error && <Alert severity="error" sx={styles.alertBox}>{error}</Alert>}
+        {successMessage && <Alert severity="success" sx={styles.alertBox}>{successMessage}</Alert>}
+
+        <TableContainer component={Paper} sx={styles.tableContainer}>
+          <Table>
+            <TableHead sx={styles.tableHead}>
+              <TableRow>
+                <TableCell sx={styles.tableHeadCell}>ID</TableCell>
+                <TableCell sx={styles.tableHeadCell}>Nazwa użytkownika</TableCell>
+                <TableCell sx={styles.tableHeadCell}>Email</TableCell>
+                <TableCell sx={styles.tableHeadCell}>Obecna rola</TableCell>
+                <TableCell sx={styles.tableHeadCell}>Zmień rolę</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {usersList.map((u: any) => (
+                <TableRow key={u.id} sx={styles.tableRow}>
+                  <TableCell>{u.id}</TableCell>
+                  <TableCell sx={{ fontWeight: "bold", color: "#333" }}>{u.username}</TableCell>
+                  <TableCell>{u.email}</TableCell>
+                  <TableCell>
+                    <Typography 
+                      component="span" 
+                      sx={{ 
+                        fontWeight: "bold", 
+                        color: u.role === "Admin" ? "#f35e20" : "#20B6F3" 
+                      }}
+                    >
+                      {u.role}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Select
+                      size="small"
+                      value={u.role}
+                      disabled={u.username === user.username} 
+                      onChange={(e: SelectChangeEvent) => handleRoleChange(u.id, e.target.value)}
+                      sx={styles.selectField}
+                    >
+                      <MenuItem value="User">User</MenuItem>
+                      <MenuItem value="Admin">Admin</MenuItem>
+                    </Select>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Paper>
+    </Box>
+  );
 }

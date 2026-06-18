@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../components/AuthContext";
 import {
-  Container,
   Table,
   TableBody,
   TableCell,
@@ -9,7 +8,13 @@ import {
   TableHead,
   TableRow,
   Paper,
+  Box,
+  Typography,
+  Alert,
+  Button
 } from "@mui/material";
+
+import { styles } from "./DeletedProducts.styles";
 
 export default function DeletedProducts() {
   const { user, token, isLoading: authLoading } = useAuth();
@@ -47,7 +52,6 @@ export default function DeletedProducts() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, token]);
 
-  // 🔥 NOWA FUNKCJA: Przywracanie produktu
   const handleRestoreProduct = async (productId: number) => {
     try {
       const response = await fetch(
@@ -63,64 +67,94 @@ export default function DeletedProducts() {
       if (!response.ok) throw new Error("Nie udało się przywrócić produktu.");
 
       alert("Produkt został przywrócony!");
-      // Odświeżamy listę, żeby przywrócony produkt z niej zniknął
       fetchDeletedProducts();
     } catch (err: any) {
       alert(err.message);
     }
   };
 
-  if (authLoading) return <Container>Sprawdzanie autoryzacji...</Container>;
-  if (user?.role !== "Admin")
+  if (authLoading) {
     return (
-      <Container>
-        <h2>Brak dostępu</h2>
-      </Container>
+      <Box sx={styles.pageWrapper}>
+        <Typography variant="h6">Sprawdzanie autoryzacji...</Typography>
+      </Box>
     );
-  if (loading) return <Container>Ładowanie archiwum...</Container>;
+  }
+
+  if (user?.role !== "Admin") {
+    return (
+      <Box sx={styles.pageWrapper}>
+        <Paper elevation={3} sx={styles.accessDeniedCard}>
+          <Typography variant="h4" color="error" sx={{ mb: 2, fontWeight: "bold" }}>
+            Brak dostępu
+          </Typography>
+          <Typography variant="body1">
+            Ta strona jest dostępna wyłącznie dla administratorów.
+          </Typography>
+        </Paper>
+      </Box>
+    );
+  }
+
+  if (loading) {
+    return (
+      <Box sx={styles.pageWrapper}>
+        <Typography variant="h6">Ładowanie archiwum...</Typography>
+      </Box>
+    );
+  }
 
   return (
-    <Container component="main">
-      <h1>Kosz - Usunięte Produkty</h1>
+    <Box sx={styles.pageWrapper}>
+      <Paper elevation={3} sx={styles.card}>
+        <Typography component="h1" variant="h4" sx={styles.header}>
+          Kosz - Usunięte Produkty
+        </Typography>
 
-      {error && <p style={{ color: "red" }}>Błąd: {error}</p>}
+        {error && <Alert severity="error" sx={styles.alertBox}>{error}</Alert>}
 
-      {deletedProducts.length === 0 ? (
-        <p>Kosz jest pusty. Żaden produkt nie został zarchiwizowany.</p>
-      ) : (
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell>Nazwa produktu</TableCell>
-                <TableCell>Opis</TableCell>
-                <TableCell>Data usunięcia</TableCell>
-                {/* 🔥 NOWA KOLUMNA */}
-                <TableCell>Akcje</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {deletedProducts.map((prod: any) => (
-                <TableRow key={prod.id}>
-                  <TableCell>{prod.id}</TableCell>
-                  <TableCell>{prod.title}</TableCell>
-                  <TableCell>{prod.description}</TableCell>
-                  <TableCell>
-                    {new Date(prod.creationDate).toLocaleDateString("pl-PL")}
-                  </TableCell>
-                  <TableCell>
-                    {/* 🔥 PRZYCISK PRZYWRACANIA */}
-                    <button onClick={() => handleRestoreProduct(prod.id)}>
-                      Przywróć
-                    </button>
-                  </TableCell>
+        {deletedProducts.length === 0 ? (
+          <Box sx={styles.emptyMessage}>
+            <Typography variant="h6">Kosz jest pusty. Żaden produkt nie został zarchiwizowany.</Typography>
+          </Box>
+        ) : (
+          <TableContainer component={Paper} sx={styles.tableContainer}>
+            <Table>
+              <TableHead sx={styles.tableHead}>
+                <TableRow>
+                  <TableCell sx={styles.tableHeadCell}>ID</TableCell>
+                  <TableCell sx={styles.tableHeadCell}>Nazwa produktu</TableCell>
+                  <TableCell sx={styles.tableHeadCell}>Opis</TableCell>
+                  <TableCell sx={styles.tableHeadCell}>Data usunięcia</TableCell>
+                  <TableCell sx={styles.tableHeadCell}>Akcje</TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      )}
-    </Container>
+              </TableHead>
+              <TableBody>
+                {deletedProducts.map((prod: any) => (
+                  <TableRow key={prod.id} sx={styles.tableRow}>
+                    <TableCell sx={{ fontWeight: "bold", color: "#555" }}>{prod.id}</TableCell>
+                    <TableCell sx={{ fontWeight: "bold" }}>{prod.title}</TableCell>
+                    <TableCell>{prod.description}</TableCell>
+                    <TableCell>
+                      {new Date(prod.creationDate).toLocaleDateString("pl-PL")}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        size="small"
+                        variant="contained"
+                        sx={styles.btnRestore}
+                        onClick={() => handleRestoreProduct(prod.id)}
+                      >
+                        Przywróć
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+      </Paper>
+    </Box>
   );
 }

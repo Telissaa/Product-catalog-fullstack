@@ -1,7 +1,22 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../components/AuthContext";
-import { Container, Button, TextField, Box } from "@mui/material";
+import {
+  Container,
+  Button,
+  TextField,
+  Box,
+  Typography,
+  Paper,
+  Alert,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  SelectChangeEvent,
+} from "@mui/material";
+
+import { styles } from "./AddProduct.styles";
 
 export default function AddProduct() {
   const { user, token } = useAuth();
@@ -15,12 +30,11 @@ export default function AddProduct() {
   const [allCategories, setAllCategories] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  // 🔥 NOWOŚĆ: Stany dla szybkiego tworzenia nowej kategorii
+  // Stany dla tworzenia nowej kategorii w locie
   const [isAddingNewCategory, setIsAddingNewCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [categoryError, setCategoryError] = useState<string | null>(null);
 
-  // Pobieranie kategorii z backendu
   const fetchCategories = async () => {
     try {
       const response = await fetch("http://localhost:5249/api/Categories");
@@ -37,13 +51,14 @@ export default function AddProduct() {
     fetchCategories();
   }, []);
 
-  // Obsługa zmiany zaznaczenia wielu kategorii
-  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedOptions = Array.from(e.target.selectedOptions, (option) => parseInt(option.value));
-    setSelectedCategoryIds(selectedOptions);
+  // Obsługa wielokrotnego wyboru komponentu Select z MUI
+  const handleCategoryChange = (event: SelectChangeEvent<number[]>) => {
+    const value = event.target.value;
+    setSelectedCategoryIds(
+      typeof value === "string" ? value.split(",").map(Number) : value,
+    );
   };
 
-  // 🔥 NOWOŚĆ: Funkcja tworzenia nowej kategorii "w locie"
   const handleCreateCategorySubmit = async (e: React.MouseEvent) => {
     e.preventDefault();
     setCategoryError(null);
@@ -54,7 +69,6 @@ export default function AddProduct() {
     }
 
     try {
-      // Strzelamy do Twojego endpointu POST /api/Categories (używamy tokenu zalogowanego usera)
       const response = await fetch("http://localhost:5249/api/Categories", {
         method: "POST",
         headers: {
@@ -67,20 +81,19 @@ export default function AddProduct() {
       const resData = await response.json();
 
       if (!response.ok) {
-        throw new Error(resData.message || "Nie udało się stworzyć kategorii. Może już istnieć.");
+        throw new Error(
+          resData.message ||
+            "Nie udało się stworzyć kategorii. Może już istnieć.",
+        );
       }
 
-      // 1. Odświeżamy listę wszystkich kategorii z bazy
       await fetchCategories();
 
-      // 2. Automatycznie zaznaczamy nowo dodaną kategorię
-      // Zakładamy, że backend w odpowiedzi zwraca obiekt stworzonej kategorii w polu 'category' lub bezpośrednio
       const createdCategory = resData.category || resData;
       if (createdCategory && createdCategory.id) {
         setSelectedCategoryIds((prev) => [...prev, createdCategory.id]);
       }
 
-      // 3. Resetujemy formularz kategorii
       setNewCategoryName("");
       setIsAddingNewCategory(false);
       alert("Kategoria została pomyślnie utworzona i dodana do listy!");
@@ -89,7 +102,6 @@ export default function AddProduct() {
     }
   };
 
-  // Zapisywanie całego produktu
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -115,7 +127,9 @@ export default function AddProduct() {
       });
 
       if (!response.ok) {
-        throw new Error("Nie udało się dodać produktu. Sprawdź poprawność danych.");
+        throw new Error(
+          "Nie udało się dodać produktu. Sprawdź poprawność danych.",
+        );
       }
 
       alert("Produkt został dodany pomyślnie!");
@@ -126,108 +140,155 @@ export default function AddProduct() {
   };
 
   if (!user) {
-    return <Container>Musisz być zalogowany, aby dodać produkt.</Container>;
+    return (
+      <Box sx={styles.pageWrapper}>
+        <Container maxWidth="sm">
+          <Alert severity="warning">
+            Musisz być zalogowany, aby dodać produkt.
+          </Alert>
+        </Container>
+      </Box>
+    );
   }
 
   return (
-    <Container component="main" maxWidth="sm">
-      <div style={{ border: "2px solid #1976d2", padding: "20px", marginTop: "40px", backgroundColor: "#f3f9ff", borderRadius: "8px" }}>
-        <h2>Dodaj nowy produkt</h2>
-        
-        {error && <p style={{ color: "red", fontWeight: "bold" }}>{error}</p>}
-        
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
-          <label>
-            <strong>Tytuł:</strong>
-            <input
-              type="text"
-              required
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              style={{ width: "100%", padding: "8px", marginTop: "5px" }}
-            />
-          </label>
-          
-          <label>
-            <strong>Opis:</strong>
-            <textarea
-              rows={5}
-              required
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              style={{ width: "100%", padding: "8px", marginTop: "5px" }}
-            />
-          </label>
-          
-          <label>
-            <strong>URL Obrazka (opcjonalnie):</strong>
-            <input
-              type="url"
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-              style={{ width: "100%", padding: "8px", marginTop: "5px" }}
-              placeholder="https://link-do-zdjecia.com/img.jpg"
-            />
-          </label>
-          
-          {/* Sekcja Kategorii z możliwością szybkiego dodawania */}
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-            <Box sx={{ display: "flex", justifyContent: "between", alignItems: "center" }}>
-              <strong>Kategorie (przytrzymaj Ctrl, by wybrać wiele):</strong>
-              <Button 
-                variant="text" 
-                size="small" 
+    <Box sx={styles.pageWrapper}>
+      <Paper elevation={3} sx={styles.card}>
+        <Typography component="h1" variant="h5" sx={styles.header}>
+          Dodaj nowy produkt
+        </Typography>
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
+
+        <Box
+          component="form"
+          onSubmit={handleSubmit}
+          noValidate
+          sx={styles.form}
+        >
+          <TextField
+            required
+            fullWidth
+            label="Tytuł"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            sx={styles.textField}
+          />
+
+          <TextField
+            required
+            fullWidth
+            multiline
+            rows={5}
+            label="Opis"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            sx={styles.textField}
+          />
+
+          <TextField
+            fullWidth
+            type="url"
+            label="URL Obrazka (opcjonalnie)"
+            placeholder="https://link-do-zdjecia.com/img.jpg"
+            value={imageUrl}
+            onChange={(e) => setImageUrl(e.target.value)}
+            sx={styles.textField}
+          />
+
+          <Box sx={styles.categorySection}>
+            <Box sx={styles.categoryHeaderBox}>
+              <Typography sx={styles.categoryLabel}>
+                Kategorie (można wybrać wiele):
+              </Typography>
+              <Button
+                variant="text"
                 onClick={() => setIsAddingNewCategory(!isAddingNewCategory)}
-                sx={{ ml: "auto", textTransform: "none", fontWeight: "bold" }}
+                sx={styles.toggleCategoryBtn}
               >
                 {isAddingNewCategory ? "✕ Zamknij" : "+ Stwórz nową kategorię"}
               </Button>
             </Box>
 
-            {/* 🔥 NOWOŚĆ: Mini-formularz szybkiego dodawania kategorii */}
             {isAddingNewCategory && (
-              <Box sx={{ p: 1.5, border: "1px dashed #1976d2", borderRadius: "4px", backgroundColor: "#fff", mb: 1 }}>
-                <p style={{ margin: "0 0 8px 0", fontSize: "13px", color: "#555" }}>Nowa kategoria:</p>
-                {categoryError && <p style={{ color: "red", fontSize: "12px", margin: "0 0 5px 0" }}>{categoryError}</p>}
-                <Box sx={{ display: "flex", gap: 1 }}>
+              <Box sx={styles.newCategoryBox}>
+                <Typography sx={styles.newCategoryLabel}>
+                  Nowa kategoria:
+                </Typography>
+                {categoryError && (
+                  <Typography
+                    color="error"
+                    variant="caption"
+                    sx={{ display: "block", mb: 1 }}
+                  >
+                    {categoryError}
+                  </Typography>
+                )}
+                <Box sx={styles.newCategoryInputBox}>
                   <TextField
                     size="small"
                     fullWidth
                     placeholder="np. Słodycze"
                     value={newCategoryName}
                     onChange={(e) => setNewCategoryName(e.target.value)}
+                    sx={styles.textField}
                   />
-                  <Button variant="contained" color="success" size="small" onClick={handleCreateCategorySubmit}>
+                  <Button
+                    variant="contained"
+                    sx={styles.btnSuccess}
+                    onClick={handleCreateCategorySubmit}
+                  >
                     Dodaj
                   </Button>
                 </Box>
               </Box>
             )}
 
-            <select
-              multiple
-              value={selectedCategoryIds.map(String)}
-              onChange={handleCategoryChange}
-              style={{ width: "100%", padding: "8px", height: "120px" }}
-            >
-              {allCategories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
+            <FormControl fullWidth sx={styles.textField}>
+              <InputLabel id="category-select-label">
+                Wybierz kategorie
+              </InputLabel>
+              <Select
+                labelId="category-select-label"
+                multiple
+                value={selectedCategoryIds}
+                onChange={handleCategoryChange}
+                label="Wybierz kategorie"
+              >
+                {allCategories.map((cat) => (
+                  <MenuItem key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
           </Box>
-          
-          <div style={{ display: "flex", gap: "10px", marginTop: "15px" }}>
-            <Button type="submit" variant="contained" color="primary" fullWidth>
+
+          <Box sx={styles.buttonGroup}>
+            <Button
+              type="submit"
+              variant="contained"
+              fullWidth
+              sx={styles.btnPrimary}
+            >
               Dodaj produkt
             </Button>
-            <Button type="button" variant="outlined" color="secondary" fullWidth onClick={() => navigate("/")}>
+            <Button
+              type="button"
+              variant="outlined"
+              fullWidth
+              sx={styles.btnCancel}
+              onClick={() => navigate("/")}
+            >
               Anuluj
             </Button>
-          </div>
-        </form>
-      </div>
-    </Container>
+          </Box>
+        </Box>
+      </Paper>
+    </Box>
   );
 }

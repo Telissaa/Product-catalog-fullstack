@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../components/AuthContext";
 import {
-  Container,
   Table,
   TableBody,
   TableCell,
@@ -9,7 +8,14 @@ import {
   TableHead,
   TableRow,
   Paper,
+  Box,
+  Typography,
+  Alert,
+  TextField,
+  Button
 } from "@mui/material";
+
+import { styles } from "./CategoryPanel.styles";
 
 export default function CategoryPanel() {
   const { user, token, isLoading: authLoading } = useAuth();
@@ -24,12 +30,11 @@ export default function CategoryPanel() {
 
   const fetchCategories = async () => {
     try {
-      // 🔥 POPRAWKA: Zmiana na "Categories"
       const response = await fetch("http://localhost:5249/api/Categories");
       if (!response.ok) throw new Error("Nie udało się pobrać kategorii.");
 
       const data = await response.json();
-      setCategories(data.categories); // Pamiętamy, że Twój backend zwraca tablicę w obiekcie pod kluczem 'categories'
+      setCategories(data.categories); 
     } catch (err: any) {
       setError(err.message);
     }
@@ -53,7 +58,6 @@ export default function CategoryPanel() {
     }
 
     try {
-      // 🔥 POPRAWKA: Zmiana na "Categories"
       const response = await fetch("http://localhost:5249/api/Categories", {
         method: "POST",
         headers: {
@@ -113,7 +117,6 @@ export default function CategoryPanel() {
     setSuccessMessage(null);
 
     try {
-      // 🔥 POPRAWKA: Zmiana na "Categories"
       const response = await fetch(
         `http://localhost:5249/api/Categories/${categoryId}`,
         {
@@ -136,84 +139,123 @@ export default function CategoryPanel() {
     }
   };
 
-  if (authLoading) return <Container>Sprawdzanie autoryzacji...</Container>;
+  // Weryfikacja stanu autoryzacji
+  if (authLoading) {
+    return (
+      <Box sx={styles.pageWrapper}>
+        <Typography variant="h6">Sprawdzanie autoryzacji...</Typography>
+      </Box>
+    );
+  }
 
+  // Weryfikacja uprawnień administracyjnych
   if (user?.role !== "Admin") {
     return (
-      <Container>
-        <h2>Brak dostępu</h2>
-      </Container>
+      <Box sx={styles.pageWrapper}>
+        <Paper elevation={3} sx={styles.accessDeniedCard}>
+          <Typography variant="h4" color="error" sx={{ mb: 2, fontWeight: "bold" }}>
+            Brak dostępu
+          </Typography>
+          <Typography variant="body1">
+            Ta strona jest dostępna wyłącznie dla administratorów.
+          </Typography>
+        </Paper>
+      </Box>
     );
   }
 
   return (
-    <Container component="main">
-      <h1>Zarządzanie Kategoriami</h1>
+    <Box sx={styles.pageWrapper}>
+      <Paper elevation={3} sx={styles.card}>
+        <Typography component="h1" variant="h4" sx={styles.header}>
+          Zarządzanie Kategoriami
+        </Typography>
 
-      {error && <p style={{ color: "red" }}>Błąd: {error}</p>}
-      {successMessage && <p style={{ color: "green" }}>{successMessage}</p>}
+        {error && <Alert severity="error" sx={styles.alertBox}>{error}</Alert>}
+        {successMessage && <Alert severity="success" sx={styles.alertBox}>{successMessage}</Alert>}
 
-      <form onSubmit={handleAddCategory} style={{ marginBottom: "20px" }}>
-        <input
-          type="text"
-          placeholder="Nowa kategoria..."
-          value={newCategoryName}
-          onChange={(e) => setNewCategoryName(e.target.value)}
-        />
-        <button type="submit">Dodaj</button>
-      </form>
+        <Box component="form" onSubmit={handleAddCategory} sx={styles.addForm}>
+          <TextField
+            size="small"
+            label="Nowa kategoria..."
+            variant="outlined"
+            value={newCategoryName}
+            onChange={(e) => setNewCategoryName(e.target.value)}
+            sx={styles.textField}
+          />
+          <Button type="submit" variant="contained" sx={styles.btnPrimary}>
+            Dodaj
+          </Button>
+        </Box>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>ID</TableCell>
-              <TableCell>Nazwa</TableCell>
-              <TableCell>Akcje</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {categories.map((cat: any) => (
-              <TableRow key={cat.id}>
-                <TableCell>{cat.id}</TableCell>
-                <TableCell>
-                  {editingId === cat.id ? (
-                    <input
-                      type="text"
-                      value={editName}
-                      onChange={(e) => setEditName(e.target.value)}
-                    />
-                  ) : (
-                    cat.name
-                  )}
-                </TableCell>
-                <TableCell>
-                  {editingId === cat.id ? (
-                    <>
-                      <button onClick={() => handleEditSubmit(cat.id)}>
-                        Zapisz
-                      </button>
-                      <button onClick={() => setEditingId(null)}>Anuluj</button>
-                    </>
-                  ) : (
-                    <>
-                      <button
-                        onClick={() => {
-                          setEditingId(cat.id);
-                          setEditName(cat.name);
-                        }}
-                      >
-                        Edytuj
-                      </button>
-                      <button onClick={() => handleDelete(cat.id)}>Usuń</button>
-                    </>
-                  )}
-                </TableCell>
+        <TableContainer component={Paper} sx={styles.tableContainer}>
+          <Table>
+            <TableHead sx={styles.tableHead}>
+              <TableRow>
+                <TableCell sx={styles.tableHeadCell}>ID</TableCell>
+                <TableCell sx={styles.tableHeadCell}>Nazwa</TableCell>
+                <TableCell sx={styles.tableHeadCell}>Akcje</TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-    </Container>
+            </TableHead>
+            <TableBody>
+              {categories.map((cat: any) => (
+                <TableRow key={cat.id} sx={styles.tableRow}>
+                  <TableCell sx={{ fontWeight: "bold", color: "#555" }}>{cat.id}</TableCell>
+                  <TableCell>
+                    {editingId === cat.id ? (
+                      <TextField
+                        size="small"
+                        fullWidth
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        sx={styles.textField}
+                      />
+                    ) : (
+                      <Typography sx={{ fontWeight: "medium" }}>{cat.name}</Typography>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Box sx={styles.actionCell}>
+                      {editingId === cat.id ? (
+                        <>
+                          <Button size="small" variant="contained" sx={styles.btnSuccess} onClick={() => handleEditSubmit(cat.id)}>
+                            Zapisz
+                          </Button>
+                          <Button size="small" variant="outlined" sx={styles.btnCancel} onClick={() => setEditingId(null)}>
+                            Anuluj
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button
+                            size="small"
+                            variant="contained"
+                            sx={styles.btnEditInfo}
+                            onClick={() => {
+                              setEditingId(cat.id);
+                              setEditName(cat.name);
+                            }}
+                          >
+                            Edytuj
+                          </Button>
+                          <Button 
+                            size="small" 
+                            variant="contained" 
+                            sx={styles.btnDeleteWarning} 
+                            onClick={() => handleDelete(cat.id)}
+                          >
+                            Usuń
+                          </Button>
+                        </>
+                      )}
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Paper>
+    </Box>
   );
 }

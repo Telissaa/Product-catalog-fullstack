@@ -19,33 +19,35 @@ import {
   Button,
   TextField,
   SelectChangeEvent,
-  Pagination 
+  Pagination,
+  Typography
 } from "@mui/material";
+
+import { styles } from "./Home.styles";
 
 export default function Home() {
   const [rows, setRows] = useState<ProductType[]>([]);
   const [sortOption, setSortOption] = useState<string>("");
   
-  // Stany dla filtrów (Backend)
+  // Stany filtrów
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [categoriesList, setCategoriesList] = useState<string[]>([]);
 
-  // Stany dla stronnicowania (Backend)
+  // Stany paginacji
   const [pageNumber, setPageNumber] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
 
-  // Pobieranie danych produktów (z filtrami i paginacją)
+  // Pobieranie produktów na podstawie parametrów wyszukiwania i paginacji
   const getProducts = async (categoryFilter?: string, searchFilter?: string, page: number = 1) => {
     const data = await getProductsData({ 
       category: categoryFilter || undefined, 
       search: searchFilter || undefined,
-      pageNumber: page // Wysyłamy numer strony do serwera
+      pageNumber: page
     });
     
     if (!data) return;
 
-    // Pobieramy produkty i dane o stronach z odpowiedzi API
     const { products, pageNumber: fetchedPage, totalPages: fetchedTotalPages } = data;
     
     setRows(products);
@@ -53,13 +55,12 @@ export default function Home() {
     setTotalPages(fetchedTotalPages);
   };
 
-  // 🔥 NOWOŚĆ: Pobieramy zawsze pełną listę kategorii bezpośrednio z API
+  // Pobieranie listy kategorii dla komponentu Select
   const fetchCategories = async () => {
     try {
       const response = await fetch("http://localhost:5249/api/Categories");
       if (response.ok) {
         const data = await response.json();
-        // Zabezpieczamy się na wypadek, gdyby API zwracało obiekt { categories: [...] } lub samą tablicę
         const cats = data.categories || data;
         setCategoriesList(cats.map((c: any) => c.name)); 
       }
@@ -68,20 +69,19 @@ export default function Home() {
     }
   };
 
-  // Uruchamia się raz, po załadowaniu strony
+  // Inicjalizacja danych
   useEffect(() => {
     getProducts(undefined, undefined, 1);
-    fetchCategories(); // 🔥 Od razu pobieramy też listę kategorii
+    fetchCategories();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Obsługa zmiany strony przez kliknięcie na pasku paginacji
+  // Obsługa zdarzeń
   const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
     setPageNumber(value);
     getProducts(selectedCategory, searchQuery, value);
   };
 
-  // Obsługa zmiany kategorii (zawsze wracamy na 1. stronę)
   const handleCategoryChange = (event: SelectChangeEvent) => {
     const newCategory = event.target.value;
     setSelectedCategory(newCategory);
@@ -89,14 +89,12 @@ export default function Home() {
     getProducts(newCategory, searchQuery, 1); 
   };
 
-  // Obsługa wyszukiwarki (zawsze wracamy na 1. stronę)
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setPageNumber(1);
     getProducts(selectedCategory, searchQuery, 1);
   };
 
-  // Czyszczenie preferencji
   const handleClearFilters = () => {
     setSortOption("");
     setSelectedCategory("");
@@ -105,7 +103,7 @@ export default function Home() {
     getProducts(undefined, undefined, 1); 
   };
 
-  // Sortowanie (Front)
+  // Logika sortowania po stronie klienta
   const sortedRows = useMemo(() => {
     let result = [...rows];
 
@@ -131,114 +129,115 @@ export default function Home() {
   }, [rows, sortOption]);
 
   return (
-    <div>
-      <h1>Lista Produktów</h1>
+    <Box sx={styles.pageWrapper}>
+      <Box sx={styles.container}>
+        <Typography variant="h3" component="h1" sx={styles.header}>
+          Katalog Produktów
+        </Typography>
 
-      {/* Pasek preferencji */}
-      <Box sx={{ display: "flex", gap: 2, mb: 3, alignItems: "center", flexWrap: "wrap" }}>
-        
-        {/* Wyszukiwarka */}
-        <Box component="form" onSubmit={handleSearchSubmit} sx={{ display: "flex", gap: 1 }}>
-          <TextField
-            size="small"
-            label="Szukaj produktu..."
-            variant="outlined"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            sx={{ backgroundColor: "white", minWidth: 200 }}
-          />
-          <Button type="submit" variant="contained" size="medium">
-            Szukaj
+        <Paper elevation={3} sx={styles.filterCard}>
+          <Box component="form" onSubmit={handleSearchSubmit} sx={styles.searchBox}>
+            <TextField
+              size="small"
+              label="Szukaj produktu..."
+              variant="outlined"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              fullWidth
+              sx={styles.searchInput}
+            />
+            <Button type="submit" variant="contained" sx={styles.searchButton}>
+              Szukaj
+            </Button>
+          </Box>
+          
+          <FormControl size="small" sx={styles.formControl}>
+            <InputLabel sx={styles.inputLabel}>Sortuj według</InputLabel>
+            <Select
+              value={sortOption}
+              label="Sortuj według"
+              onChange={(e) => setSortOption(e.target.value)}
+              sx={styles.select}
+            >
+              <MenuItem value=""><em>Brak (Domyślnie)</em></MenuItem>
+              <MenuItem value="name-asc">Nazwa: A-Z</MenuItem>
+              <MenuItem value="name-desc">Nazwa: Z-A</MenuItem>
+              <MenuItem value="cat-asc">Kategoria: A-Z</MenuItem>
+              <MenuItem value="cat-desc">Kategoria: Z-A</MenuItem>
+            </Select>
+          </FormControl>
+
+          <FormControl size="small" sx={styles.formControl}>
+            <InputLabel sx={styles.inputLabel}>Kategoria</InputLabel>
+            <Select
+              value={selectedCategory}
+              label="Kategoria"
+              onChange={handleCategoryChange}
+              sx={styles.select}
+            >
+              <MenuItem value=""><em>Wszystkie</em></MenuItem>
+              {categoriesList.map((category) => (
+                <MenuItem key={category} value={category}>
+                  {category}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <Button variant="outlined" onClick={handleClearFilters} sx={styles.clearButton}>
+            Wyczyść filtry
           </Button>
-        </Box>
-        
-        {/* Sortowanie Frontend */}
-        <FormControl size="small" sx={{ minWidth: 180, backgroundColor: "white" }}>
-          <InputLabel>Sortuj według</InputLabel>
-          <Select
-            value={sortOption}
-            label="Sortuj według"
-            onChange={(e) => setSortOption(e.target.value)}
-          >
-            <MenuItem value=""><em>Brak (Domyślnie)</em></MenuItem>
-            <MenuItem value="name-asc">Nazwa: A-Z</MenuItem>
-            <MenuItem value="name-desc">Nazwa: Z-A</MenuItem>
-            <MenuItem value="cat-asc">Kategoria: A-Z</MenuItem>
-            <MenuItem value="cat-desc">Kategoria: Z-A</MenuItem>
-          </Select>
-        </FormControl>
+        </Paper>
 
-        {/* Filtrowanie robi Backend */}
-        <FormControl size="small" sx={{ minWidth: 180, backgroundColor: "white" }}>
-          <InputLabel>Kategoria</InputLabel>
-          <Select
-            value={selectedCategory}
-            label="Kategoria"
-            onChange={handleCategoryChange}
-          >
-            <MenuItem value=""><em>Wszystkie</em></MenuItem>
-            {categoriesList.map((category) => (
-              <MenuItem key={category} value={category}>
-                {category}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-
-        <Button 
-          variant="outlined" 
-          color="secondary" 
-          onClick={handleClearFilters}
-          sx={{ ml: "auto" }}
-        >
-          Wyczyść filtry
-        </Button>
-      </Box>
-
-      <TableContainer component={Paper}>
-        <Table sx={{ minWidth: 650 }} aria-label="tabela produktów">
-          <TableHead>
-            <TableRow>
-              <TableCell><strong>ID</strong></TableCell>
-              <TableCell><strong>Nazwa</strong></TableCell>
-              <TableCell><strong>Kategoria</strong></TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {sortedRows.map((row) => (
-              <TableRow
-                key={row.id}
-                sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-              >
-                <TableCell>{row.id}</TableCell>
-                <TableCell>
-                  <Link to={`/products/${row.id}`} style={{ textDecoration: "none", color: "#1976d2", fontWeight: "bold" }}>
-                    {row.title}
-                  </Link>
-                </TableCell>
-                <TableCell>
-                  {row.categories && row.categories.length > 0 
-                    ? row.categories.join(", ") 
-                    : "Brak"}
-                </TableCell>
+        <TableContainer component={Paper} elevation={3} sx={styles.tableContainer}>
+          <Table sx={{ minWidth: 650 }} aria-label="tabela produktów">
+            <TableHead sx={styles.tableHead}>
+              <TableRow>
+                <TableCell sx={styles.tableHeadCell}>ID</TableCell>
+                <TableCell sx={styles.tableHeadCell}>Nazwa</TableCell>
+                <TableCell sx={styles.tableHeadCell}>Kategoria</TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+            </TableHead>
+            <TableBody>
+              {sortedRows.length > 0 ? (
+                sortedRows.map((row) => (
+                  <TableRow key={row.id} sx={styles.tableRow}>
+                    <TableCell sx={styles.tableCellId}>{row.id}</TableCell>
+                    <TableCell>
+                      <Link to={`/products/${row.id}`} style={styles.productLink}>
+                        {row.title}
+                      </Link>
+                    </TableCell>
+                    <TableCell sx={styles.tableCellCategory}>
+                      {row.categories && row.categories.length > 0 
+                        ? row.categories.join(", ") 
+                        : <span style={{ color: "#aaa", fontStyle: "italic" }}>Brak</span>}
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={3} align="center" sx={{ py: 5, color: "#666", fontSize: "16px" }}>
+                    Nie znaleziono produktów spełniających podane kryteria.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
 
-      {/* Pasek Paginacji*/}
-      {totalPages > 1 && (
-        <Box sx={{ display: "flex", justifyContent: "center", mt: 4, mb: 4 }}>
-          <Pagination 
-            count={totalPages} 
-            page={pageNumber} 
-            onChange={handlePageChange} 
-            color="primary" 
-            size="large"
-          />
-        </Box>
-      )}
-    </div>
+        {totalPages > 1 && (
+          <Box sx={styles.paginationWrapper}>
+            <Pagination 
+              count={totalPages} 
+              page={pageNumber} 
+              onChange={handlePageChange} 
+              size="large"
+              sx={styles.pagination}
+            />
+          </Box>
+        )}
+      </Box>
+    </Box>
   );
 }

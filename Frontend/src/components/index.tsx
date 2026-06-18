@@ -1,33 +1,77 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "./AuthContext"; 
-
+import { AppBar, Toolbar, Box, Button, Typography } from "@mui/material";
+import { styles } from "./Navbar.styles";
+import logo from "../assets/logo.svg";
 export default function Navbar() {
   const { user, logout } = useAuth();
 
   return (
-    <nav>
-      <Link to="/">Strona Główna</Link>
+    <AppBar position="static" sx={styles.appBar}>
+      <Toolbar sx={styles.toolbar}>
+        <Box 
+        component={Link} 
+        to="/" 
+        sx={{ display: "flex", alignItems: "center", textDecoration: "none", mr: 2 }}
+      >
+        <Box 
+          component="img" 
+          src={logo} 
+          alt="Logo aplikacji" 
+          sx={{ height: 40, width: "auto" }} 
+        />
+      </Box>
 
-      {user ? (
-        <>
-          {/* Widoczne tylko dla Admina */}
-          {user.role === "Admin" && (
+        {/* Sekcja lewa: Linki nawigacyjne */}
+        <Box sx={styles.leftSection}>
+          <Button component={Link} to="/" sx={styles.navLink}>
+            Strona Główna
+          </Button>
+
+          {user?.role === "Admin" && (
             <>
-              <Link to="/admin/users">Panel Admina</Link>
-              <Link to="/admin/categories">Kategorie</Link>
-              <Link to="/admin/deleted-products">Usunięte produkty</Link>
+              <Button component={Link} to="/admin/users" sx={styles.navLink}>
+                Panel Admina
+              </Button>
+              <Button component={Link} to="/admin/categories" sx={styles.navLink}>
+                Kategorie
+              </Button>
+              <Button component={Link} to="/admin/deleted-products" sx={styles.navLink}>
+                Usunięte produkty
+              </Button>
             </>
           )}
-          <Link to="/add-product">Dodaj produkt</Link>
-          <span>Zalogowany jako: {user.username} ({user.role})</span>
-          <button onClick={logout}>Wyloguj się</button>
-        </>
-      ) : (
-        <>
-          <Link to="/api/Auth/login">Logowanie</Link>
-          <Link to="/api/Auth/register">Rejestracja</Link>
-        </>
-      )}
-    </nav>
+        </Box>
+
+        {/* Sekcja prawa: Status autoryzacji i akcje użytkownika */}
+        <Box sx={styles.rightSection}>
+          {user ? (
+            <>
+              <Button component={Link} to="/add-product" sx={styles.addLink}>
+                Dodaj produkt
+              </Button>
+              
+              <Typography sx={styles.userInfo}>
+                Zalogowany jako: <strong>{user.username}</strong> ({user.role})
+              </Typography>
+              
+              <Button onClick={logout} sx={styles.logoutButton}>
+                Wyloguj się
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button component={Link} to="/api/Auth/login" sx={styles.authLink}>
+                Logowanie
+              </Button>
+              <Button component={Link} to="/api/Auth/register" sx={styles.authLink}>
+                Rejestracja
+              </Button>
+            </>
+          )}
+        </Box>
+        
+      </Toolbar>
+    </AppBar>
   );
 }
